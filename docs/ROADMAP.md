@@ -138,9 +138,10 @@
 | Plano aprovado | 03/08 às 17:15 |
 | Implementação iniciada | 03/08 às 17:15 |
 | Implementação concluída | 03/08 às 17:35 |
-| Revisão do usuário concluída | 03/08 às 17:35 |
+| Ajustes Vercel Serverless | 03/08 às 19:30 às 19:46 |
+| Revisão do usuário concluída | 03/08 às 19:46 |
 
-**Resultado:** CORS habilitado no NestJS, suporte a envs `VITE_GRAPHQL_URL` no React, `README.md` principal criado conforme os requisitos do teste e compilação do monorepo totalmente validada via PNPM.  
+**Resultado:** CORS habilitado no NestJS, suporte a envs `VITE_GRAPHQL_URL` no React, handler Serverless exportado em `apps/api/src/main.ts` com cache de instância em memória (evitando crashes de `app.listen()` na Vercel e minimizando cold starts), arquivos `vercel.json` configurados para `api` e `web`, e `README.md` principal finalizado.  
 **Pendências/observações:** Nenhuma.
 
 ---
