@@ -129,7 +129,7 @@
 - *CORS Liberado para Cliente Web*: `app.enableCors()` configurado para permitir comunicação entre o frontend Vite (port 4200 ou Vercel) e o backend NestJS (port 3000 ou Render).
 - *Vite Env Variables*: Suporte a `import.meta.env.VITE_GRAPHQL_URL` para flexibilidade de deploy.
 
-**Decisão do desenvolvedor:** Aprovado início da Fase 6 (às 17:15).
+**Decisão do desenvolvedor:** Adoção do padrão nativo de Serverless Functions da Vercel (`apps/api/api/index.ts`) com reescrita para `/api/index` em `apps/api/vercel.json`, mantendo toda a infraestrutura unificada na Vercel com CI/CD único, tratamento dinâmico de CORS com sanitização de barra final (`/`) e fallback estratégico pré-documentado para o Render caso necessário.
 
 **Timestamps**
 | Marco | Horário |
@@ -140,9 +140,10 @@
 | Implementação concluída | 03/08 às 17:35 |
 | Ajustes Vercel Serverless | 03/08 às 19:30 às 19:46 |
 | Correção vercel.json (removido builds) | 03/08 às 20:13 às 20:23 |
-| Revisão do usuário concluída | 03/08 às 20:23 |
+| Implementação Vercel Entrypoint (`api/index.ts`) | 03/08 às 21:22 às 21:26 |
+| Revisão do usuário concluída | 03/08 às 21:26 |
 
-**Resultado:** CORS habilitado no NestJS, suporte a envs `VITE_GRAPHQL_URL` no React, handler Serverless exportado em `apps/api/src/main.ts` com cache de instância em memória, remoção da chave legada `"builds"` em `apps/api/vercel.json` permitindo que a Vercel execute o `pnpm install` e o `npx nx build api` do Dashboard sem ignorar a etapa de build, e `README.md` finalizado.  
+**Resultado:** Padrão nativo Vercel Serverless Function implementado em `apps/api/api/index.ts` com cache de instância NestJS em memória (mitigando cold starts), reescrita direcionada para `/api/index` em `apps/api/vercel.json`, sanitização de barras finais em `getCorsOrigins()`, e suporte a envs `VITE_GRAPHQL_URL` no React.  
 **Pendências/observações:** Nenhuma.
 
 ---
