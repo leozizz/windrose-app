@@ -1,12 +1,16 @@
 import { StrictMode } from 'react';
 import * as ReactDOM from 'react-dom/client';
-import { ApolloClient, InMemoryCache } from '@apollo/client';
+import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import App from './app/app';
 import './styles.css';
 
+const graphqlUri =
+  (import.meta.env['VITE_GRAPHQL_URL'] as string) ||
+  'http://localhost:3000/graphql';
+
 const client = new ApolloClient({
-  uri: process.env['NODE_ENV'] === 'production' ? '/graphql' : 'http://localhost:3000/graphql',
+  link: new HttpLink({ uri: graphqlUri }),
   cache: new InMemoryCache(),
 });
 
