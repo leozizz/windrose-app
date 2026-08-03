@@ -6,6 +6,7 @@ allowBuilds:
   '@nestjs/core': false
   '@parcel/watcher': false
   less: false
+  '@apollo/protobufjs': true
 minimumReleaseAgeExclude:
   - '@nx/nx-darwin-arm64@23.1.1'
   - '@nx/nx-darwin-x64@23.1.1'

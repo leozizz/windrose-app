@@ -54,10 +54,15 @@
     "webpack-dev-server": "^5.2.1"
   },
   "dependencies": {
+    "@apollo/client": "^4.2.9",
+    "@apollo/server": "^5.5.1",
+    "@nestjs/apollo": "^13.4.2",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/graphql": "^13.4.2",
     "@nestjs/platform-express": "^11.0.0",
     "axios": "^1.6.0",
+    "graphql": "^16.14.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "6.30.3",
