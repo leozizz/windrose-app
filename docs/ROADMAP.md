@@ -45,9 +45,55 @@
 | Plano aprovado | 03/08 às 12:06 |
 | Implementação iniciada | 03/08 às 12:06 |
 | Implementação concluída | 03/08 às 12:12 |
-| Revisão do usuário concluída | *Pendente* |
+| Revisão do usuário concluída | 03/08 às 12:12 |
 
 **Resultado:** Módulo de integração com Open-Meteo (`WeatherModule`) implementado com sucesso. Serviços `GeocodingService` e `OpenMeteoClientService` criados com suporte a geocodificação de cidades por nome, busca de previsão para 7 dias, e resiliência graciosa para cidades continentais sem dados de mar.  
+**Pendências/observações:** Nenhuma.
+
+---
+
+## Fase 3: Módulo de Scoring (`ScoringModule`)
+
+**Plano proposto:** Implementação do módulo `ScoringModule` com algoritmos determinísticos de cálculo de pontuação (0-100) e justificativas em inglês (`reasons`) para as atividades Outdoor Sightseeing e Surfing.
+
+**Alternativas consideradas:** 
+- *Mensagens e Motivos em Inglês*: Garantir que todos os textos de resposta da API (`reasons`, `recommendationLevel`) estejam em inglês para integração fluida com o frontend em inglês.
+
+**Decisão do desenvolvedor:** Aprovado início da Fase 3 (às 12:46).
+
+**Timestamps**
+| Marco | Horário |
+|---|---|
+| Plano proposto | 03/08 às 12:12 |
+| Plano aprovado | 03/08 às 12:46 |
+| Implementação iniciada | 03/08 às 12:46 |
+| Implementação concluída | 03/08 às 12:48 |
+| Revisão do usuário concluída | 03/08 às 12:48 |
+
+**Resultado:** Módulo de scoring (`ScoringModule`) implementado com sucesso. Avaliadores `OutdoorSightseeingEvaluator` e `SurfingEvaluator` criados com lógica determinística de pontuação de 0 a 100 e todas as justificativas (`reasons`) e classificações em inglês.  
+**Pendências/observações:** Nenhuma.
+
+---
+
+## Fase 4: Resolvers GraphQL + Schema Code-First (`RankingModule`)
+
+**Plano proposto:** Configuração do `GraphQLModule` com `ApolloDriver` em `AppModule`, criação de `RankingResolver`, DTOs/ObjectTypes GraphQL (`ActivityRankingResultType`, `DailyScoreType`, `LocationSearchResultType`) e queries `rankActivity` e `searchLocations`.
+
+**Alternativas consideradas:** 
+- *Busca transparente por nome de cidade (`cityName`)*: O resolver encadeia `GeocodingService` -> `OpenMeteoClientService` -> `ScoringService`, simplificando a interface GraphQL.
+
+**Decisão do desenvolvedor:** Aprovado início da Fase 4 (às 13:22).
+
+**Timestamps**
+| Marco | Horário |
+|---|---|
+| Plano proposto | 03/08 às 12:48 |
+| Plano aprovado | 03/08 às 13:22 |
+| Implementação iniciada | 03/08 às 13:22 |
+| Implementação concluída | 03/08 às 13:30 |
+| Revisão do usuário concluída | *Pendente* |
+
+**Resultado:** Resolvers GraphQL e Schema Code-First (`RankingModule`) implementados com sucesso. Queries `rankActivity` e `searchLocations` integradas com o `GraphQLModule` do NestJS e Apollo Driver.  
 **Pendências/observações:** Nenhuma.
 
 ---
@@ -57,4 +103,6 @@
 - Tempo total de revisão/aprovação: TBD
 - Principais trade-offs da entrega: TBD
 - O que seria feito diferente com mais tempo: TBD
+
+
 
