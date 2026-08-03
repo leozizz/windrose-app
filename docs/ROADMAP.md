@@ -91,9 +91,32 @@
 | Plano aprovado | 03/08 às 13:22 |
 | Implementação iniciada | 03/08 às 13:22 |
 | Implementação concluída | 03/08 às 13:30 |
-| Revisão do usuário concluída | *Pendente* |
+| Revisão do usuário concluída | 03/08 às 13:30 |
 
 **Resultado:** Resolvers GraphQL e Schema Code-First (`RankingModule`) implementados com sucesso. Queries `rankActivity` e `searchLocations` integradas com o `GraphQLModule` do NestJS e Apollo Driver.  
+**Pendências/observações:** Nenhuma.
+
+---
+
+## Fase 5: Frontend React em Inglês (`apps/web`)
+
+**Plano proposto:** Interface React 19 + TypeScript + Vite + Apollo Client (`apps/web`) em Dark Theme com estética premium, Glassmorphism, input de busca por cidade, seletor de atividade (*Outdoor Sightseeing* / *Surfing*), hero card de score geral e grid dos 7 dias com justificativas em inglês.
+
+**Alternativas consideradas:** 
+- *Vanilla CSS com variáveis de design*: Utilizar CSS custom properties em `apps/web/src/styles.css` para design limpo, fluido e responsivo.
+
+**Decisão do desenvolvedor:** Aprovado início da Fase 5 (às 16:23).
+
+**Timestamps**
+| Marco | Horário |
+|---|---|
+| Plano proposto | 03/08 às 13:30 |
+| Plano aprovado | 03/08 às 16:23 |
+| Implementação iniciada | 03/08 às 16:23 |
+| Implementação concluída | 03/08 às 16:55 |
+| Revisão do usuário concluída | *Pendente* |
+
+**Resultado:** Frontend React + Apollo Client (`apps/web`) implementado em inglês com estética premium Glassmorphism, Dark Theme, busca de cidades, seletor de atividades, score hero card e grid interativo de 7 dias com justificativas detalhadas.  
 **Pendências/observações:** Nenhuma.
 
 ---
@@ -103,6 +126,7 @@
 - Tempo total de revisão/aprovação: TBD
 - Principais trade-offs da entrega: TBD
 - O que seria feito diferente com mais tempo: TBD
+
 
 
 
