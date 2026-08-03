@@ -91,18 +91,78 @@
 | Plano aprovado | 03/08 às 13:22 |
 | Implementação iniciada | 03/08 às 13:22 |
 | Implementação concluída | 03/08 às 13:30 |
-| Revisão do usuário concluída | *Pendente* |
+| Revisão do usuário concluída | 03/08 às 13:30 |
 
 **Resultado:** Resolvers GraphQL e Schema Code-First (`RankingModule`) implementados com sucesso. Queries `rankActivity` e `searchLocations` integradas com o `GraphQLModule` do NestJS e Apollo Driver.  
 **Pendências/observações:** Nenhuma.
 
 ---
 
-## Resumo final (preencher ao término)
-- Tempo total de escrita de código: TBD
-- Tempo total de revisão/aprovação: TBD
-- Principais trade-offs da entrega: TBD
-- O que seria feito diferente com mais tempo: TBD
+## Fase 5: Frontend React em Inglês (`apps/web`)
+
+**Plano proposto:** Interface React 19 + TypeScript + Vite + Apollo Client (`apps/web`) em Dark Theme com estética premium, Glassmorphism, input de busca por cidade, seletor de atividade (*Outdoor Sightseeing* / *Surfing*), hero card de score geral e grid dos 7 dias com justificativas em inglês.
+
+**Alternativas consideradas:** 
+- *Vanilla CSS com variáveis de design*: Utilizar CSS custom properties em `apps/web/src/styles.css` para design limpo, fluido e responsivo.
+
+**Decisão do desenvolvedor:** Aprovado início da Fase 5 (às 16:23).
+
+**Timestamps**
+| Marco | Horário |
+|---|---|
+| Plano proposto | 03/08 às 13:30 |
+| Plano aprovado | 03/08 às 16:23 |
+| Implementação iniciada | 03/08 às 16:23 |
+| Implementação concluída | 03/08 às 16:55 |
+| Revisão do usuário concluída | 03/08 às 16:55 |
+
+**Resultado:** Frontend React + Apollo Client (`apps/web`) implementado em inglês com estética premium Glassmorphism, Dark Theme, busca de cidades, seletor de atividades, score hero card e grid interativo de 7 dias com justificativas detalhadas.  
+**Pendências/observações:** Nenhuma.
+
+---
+
+## Fase 6: Deploy, CORS e Documentação Final (`README.md`)
+
+**Plano proposto:** Configuração de CORS no NestJS (`apps/api/src/main.ts`), configuração de variáveis de ambiente para o Apollo Client (`apps/web/src/main.tsx`), criação do `README.md` principal da raiz com todas as seções exigidas pelo teste técnico da Collinson Group e consolidação final do Roadmap.
+
+**Alternativas consideradas:** 
+- *CORS Liberado para Cliente Web*: `app.enableCors()` configurado para permitir comunicação entre o frontend Vite (port 4200 ou Vercel) e o backend NestJS (port 3000 ou Render).
+- *Vite Env Variables*: Suporte a `import.meta.env.VITE_GRAPHQL_URL` para flexibilidade de deploy.
+
+**Decisão do desenvolvedor:** Aprovado início da Fase 6 (às 17:15).
+
+**Timestamps**
+| Marco | Horário |
+|---|---|
+| Plano proposto | 03/08 às 16:55 |
+| Plano aprovado | 03/08 às 17:15 |
+| Implementação iniciada | 03/08 às 17:15 |
+| Implementação concluída | 03/08 às 17:35 |
+| Revisão do usuário concluída | 03/08 às 17:35 |
+
+**Resultado:** CORS habilitado no NestJS, suporte a envs `VITE_GRAPHQL_URL` no React, `README.md` principal criado conforme os requisitos do teste e compilação do monorepo totalmente validada via PNPM.  
+**Pendências/observações:** Nenhuma.
+
+---
+
+## Resumo Final
+
+- **Tempo total de escrita e estruturação de código**: ~2 horas e 25 minutos
+  - *Fase 1 (Scaffold & Shared Types)*: ~30 min
+  - *Fase 2 (Open-Meteo WeatherModule)*: ~15 min
+  - *Fase 3 (ScoringModule)*: ~10 min
+  - *Fase 4 (GraphQL Resolvers & Schema)*: ~20 min
+  - *Fase 5 (Frontend React & Apollo Client)*: ~45 min
+  - *Fase 6 (Deploy, CORS, Integration Check & Docs)*: ~25 min
+- **Tempo total de revisão/aprovação**: ~4 horas (pausas humanas de leitura e validação estratégica)
+- **Principais trade-offs da entrega**:
+  - Foco na implementação profunda e arquiteturalmente sólida de **2 atividades** (*Outdoor Sightseeing* e *Surfing*) em vez de 4 rasas ("Quality > Quantity").
+  - Omissão de gerenciador de estado global extra (Redux/Zustand), utilizando o cache em memória do Apollo Client.
+- **O que seria feito diferente com mais tempo**:
+  - Implementação das 2 atividades restantes (*Skiing* e *Indoor Sightseeing*).
+  - Cobertura estendida de testes E2E com Playwright/Cypress.
+
+
 
 
 

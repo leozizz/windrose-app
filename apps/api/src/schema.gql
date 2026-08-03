@@ -1,0 +1,74 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""7-day activity ranking result for a destination"""
+type ActivityRankingResultType {
+  """Target activity"""
+  activity: ActivityType!
+
+  """Daily breakdown for the next 7 days"""
+  dailyScores: [DailyScoreType!]!
+
+  """Geographic latitude"""
+  latitude: Float!
+
+  """Name of the city or location"""
+  locationName: String!
+
+  """Geographic longitude"""
+  longitude: Float!
+
+  """Overall 7-day average score (0-100)"""
+  overallScore: Int!
+
+  """Overall recommendation level"""
+  recommendationLevel: String!
+}
+
+"""Supported activities for weather destination ranking"""
+enum ActivityType {
+  OUTDOOR_SIGHTSEEING
+  SURFING
+}
+
+"""Daily activity score breakdown"""
+type DailyScoreType {
+  """Forecast date (YYYY-MM-DD)"""
+  date: String!
+
+  """Detailed weather reasons in English"""
+  reasons: [String!]!
+
+  """Recommendation level (EXCELLENT, GOOD, FAIR, POOR)"""
+  recommendationLevel: String!
+
+  """Activity score from 0 to 100"""
+  score: Int!
+}
+
+"""Geocoding search location result"""
+type LocationSearchResultType {
+  """Administrative region"""
+  admin1: String
+
+  """Country name"""
+  country: String
+
+  """Latitude"""
+  latitude: Float!
+
+  """Longitude"""
+  longitude: Float!
+
+  """City name"""
+  name: String!
+}
+
+type Query {
+  """Returns weather suitability ranking for an activity over 7 days"""
+  rankActivity(activity: ActivityType!, cityName: String!): ActivityRankingResultType!
+
+  """Search for matching city names and coordinates"""
+  searchLocations(query: String!): [LocationSearchResultType!]!
+}
