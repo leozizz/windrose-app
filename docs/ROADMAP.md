@@ -139,9 +139,10 @@
 | Implementação iniciada | 03/08 às 17:15 |
 | Implementação concluída | 03/08 às 17:35 |
 | Ajustes Vercel Serverless | 03/08 às 19:30 às 19:46 |
-| Revisão do usuário concluída | 03/08 às 19:46 |
+| Correção vercel.json (removido builds) | 03/08 às 20:13 às 20:23 |
+| Revisão do usuário concluída | 03/08 às 20:23 |
 
-**Resultado:** CORS habilitado no NestJS, suporte a envs `VITE_GRAPHQL_URL` no React, handler Serverless exportado em `apps/api/src/main.ts` com cache de instância em memória (evitando crashes de `app.listen()` na Vercel e minimizando cold starts), arquivos `vercel.json` configurados para `api` e `web`, e `README.md` principal finalizado.  
+**Resultado:** CORS habilitado no NestJS, suporte a envs `VITE_GRAPHQL_URL` no React, handler Serverless exportado em `apps/api/src/main.ts` com cache de instância em memória, remoção da chave legada `"builds"` em `apps/api/vercel.json` permitindo que a Vercel execute o `pnpm install` e o `npx nx build api` do Dashboard sem ignorar a etapa de build, e `README.md` finalizado.  
 **Pendências/observações:** Nenhuma.
 
 ---
