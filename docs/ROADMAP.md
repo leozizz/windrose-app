@@ -129,7 +129,7 @@
 - *CORS Liberado para Cliente Web*: `app.enableCors()` configurado para permitir comunicação entre o frontend Vite (port 4200 ou Vercel) e o backend NestJS (port 3000 ou Render).
 - *Vite Env Variables*: Suporte a `import.meta.env.VITE_GRAPHQL_URL` para flexibilidade de deploy.
 
-**Decisão do desenvolvedor:** Adoção do padrão nativo de Serverless Functions da Vercel (`apps/api/api/index.ts`) com reescrita para `/api/index` em `apps/api/vercel.json`, mantendo toda a infraestrutura unificada na Vercel com CI/CD único, tratamento dinâmico de CORS com sanitização de barra final (`/`) e fallback estratégico pré-documentado para o Render caso necessário.
+**Decisão do desenvolvedor:** Conforme pré-acordado na Seção 6 do `spec/context-summary.md` e Seção 3 do `spec/nx-vercel-relatory.md`, o desenvolvedor acionou o fallback arquitetural para implantar a API Backend (`apps/api`) em container no **Render Free Tier**, mantendo o Frontend React na **Vercel**. Essa abordagem elimina todas as limitações e cold starts de funções Serverless, mantendo a API 100% fiel ao código original NestJS/Express standalone.
 
 **Timestamps**
 | Marco | Horário |
@@ -138,12 +138,11 @@
 | Plano aprovado | 03/08 às 17:15 |
 | Implementação iniciada | 03/08 às 17:15 |
 | Implementação concluída | 03/08 às 17:35 |
-| Ajustes Vercel Serverless | 03/08 às 19:30 às 19:46 |
-| Correção vercel.json (removido builds) | 03/08 às 20:13 às 20:23 |
-| Implementação Vercel Entrypoint (`api/index.ts`) | 03/08 às 21:22 às 21:26 |
-| Revisão do usuário concluída | 03/08 às 21:26 |
+| Tentativas Vercel Serverless | 03/08 às 19:30 às 21:30 |
+| Acionamento Fallback Render | 03/08 às 22:17 |
+| Revisão do usuário concluída | 03/08 às 22:18 |
 
-**Resultado:** Padrão nativo Vercel Serverless Function implementado em `apps/api/api/index.ts` com cache de instância NestJS em memória (mitigando cold starts), reescrita direcionada para `/api/index` em `apps/api/vercel.json`, sanitização de barras finais em `getCorsOrigins()`, e suporte a envs `VITE_GRAPHQL_URL` no React.  
+**Resultado:** Limpeza dos arquivos/adapters Serverless Vercel da API executada. Aplicação NestJS retornada ao formato standalone puro com suporte a CORS dinâmico (`FRONTEND_URL`), e guia de deploy no Render elaborado para disponibilização da API.  
 **Pendências/observações:** Nenhuma.
 
 ---
