@@ -82,11 +82,6 @@
           "buildTarget": "api:build:production"
         }
       }
-    },
-    "test": {
-      "options": {
-        "passWithNoTests": true
-      }
     }
   }
 }

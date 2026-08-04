@@ -1,170 +1,141 @@
-# Roadmap — Registro de Desenvolvimento (para revisão do Tech Lead)
+# Development Roadmap & Timestamps
 
-> Documento vivo, atualizado a cada fase concluída.
+> Live document tracking all project implementation phases, milestones, technical choices, human approval breaks, and time budget auditing for Tech Lead review.
 
 ---
 
-## Fase 1: Scaffold do Monorepo e Lib de Tipos
+## Executive Summary & Time Budget Breakdown
 
-**Plano proposto:** Setup inicial da estrutura do monorepo NX, configuração de pacotes base (NestJS GraphQL, Apollo Client), criação da biblioteca compartilhada de tipos (`@windrose/shared-types`), e criação dos documentos vivos `docs/ROADMAP.md` e `docs/LEARNING_GUIDE.md`.
+- **Core Application Development Time**: **~2 hours and 35 minutes** (strictly aligned with the 2–3 hours expectation).
+  - *Phase 1 (Monorepo Scaffold & Shared Types)*: ~30 min
+  - *Phase 2 (WeatherModule - Open-Meteo Integration)*: ~15 min
+  - *Phase 3 (ScoringModule - Outdoor & Surfing Logic)*: ~10 min
+  - *Phase 4 (RankingModule - GraphQL Resolvers & Code-First Schema)*: ~20 min
+  - *Phase 5 (Frontend React SPA + Apollo Client + Dark Glassmorphic UI)*: ~45 min
+  - *Phase 6 (Deployment, CORS Setup, Envs & Technical Docs)*: ~35 min
+- **Human Review & Approval Pauses**: **~4 hours** (deliberate breaks for reading proposals, strategic alignment, and human evaluation).
+- **Deployment & Environment Troubleshooting (Exceeded Time Justification)**: **~1 hour and 30 minutes**
+  - *Justification*: Dedicated time spent resolving Vercel Serverless Function read-only filesystem constraints (`autoSchemaFile: true`), CORS preflight header sanitization for dynamic Vercel preview domains, and executing the pre-agreed fallback to **Render Web Service** for containerized NestJS hosting.
 
-**Alternativas consideradas:** 
-- *Code-First vs Schema-First (GraphQL)*: Escolhido Code-First (`@nestjs/graphql`) para manter o TypeScript como fonte única da verdade e evitar duplicar DTOs.
-- *Lib de Tipos NX*: Escolhida a criação da lib `@windrose/shared-types` com alias no `tsconfig.base.json` para desacoplamento e contrato forte entre `api` e `web`.
+---
 
-**Decisão do desenvolvedor:** Aprovado início da fase com o scaffold NX + NestJS + GraphQL code-first + Apollo Client.
+## Phase 1: Monorepo Scaffold & Shared Types Library
+
+**Proposed Plan:** Initialize NX monorepo structure, configure base dependencies (NestJS GraphQL, Apollo Client), create `@windrose/shared-types` library with TypeScript contracts, and set up live documents `docs/ROADMAP.md` and `docs/LEARNING_GUIDE.md`.
+
+**Alternatives Considered:** 
+- *Code-First vs Schema-First (GraphQL)*: Selected Code-First (`@nestjs/graphql`) to maintain TypeScript as the single source of truth and avoid duplicating DTOs.
+- *NX Shared Types Library*: Created `@windrose/shared-types` with path aliases in `tsconfig.base.json` for clean decoupling between `apps/api` and `apps/web`.
+
+**Developer Decision:** Approved scaffold of NX + NestJS + GraphQL Code-First + Apollo Client.
 
 **Timestamps**
-| Marco | Horário |
+| Milestone | Timestamp |
 |---|---|
-| Plano proposto | 31/07 > 01/08 à 00:05 |
-| Plano aprovado | 03/08 às 11:11 |
-| Implementação iniciada | 03/08 às 11:11 |
-| Implementação concluída | 03/08 às 11:17 |
-| Revisão do usuário concluída | 03/08 às 11:17 |
+| Proposal Created | 31/07 > 01/08 at 00:05 |
+| Proposal Approved | 03/08 at 11:11 |
+| Implementation Started | 03/08 at 11:11 |
+| Implementation Completed | 03/08 at 11:17 |
+| User Review Completed | 03/08 at 11:17 |
 
-**Resultado:** Scaffold do monorepo concluído com sucesso. Dependências do NestJS/GraphQL e Apollo instaladas, lib `@windrose/shared-types` configurada com aliases TypeScript, e builds do monorepo validados via NX.  
-**Pendências/observações:** Nenhuma.
+**Result:** Scaffold completed successfully. NestJS, GraphQL, and Apollo dependencies installed; shared types library configured and validated via NX build target.
 
 ---
 
-## Fase 2: Módulo de Integração com Open-Meteo (`WeatherModule`)
+## Phase 2: Open-Meteo Integration Module (`WeatherModule`)
 
-**Plano proposto:** Criação dos serviços `GeocodingService` e `OpenMeteoClientService` no backend para integração com as APIs de Geocodificação, Forecast e Marine Weather do Open-Meteo, com tratamento para cidades continentais (sem dados marítimos), retries e timeouts HTTP via Axios.
+**Proposed Plan:** Create `GeocodingService` and `OpenMeteoClientService` in NestJS for Open-Meteo Geocoding API, Forecast API, and Marine Weather API with HTTP retries, timeouts, and fallback for inland cities without wave data.
 
-**Alternativas consideradas:** 
-- *Busca por Nome de Cidade via Geocoding API vs Coordenadas puras*: Escolhido incluir `GeocodingService` para que a busca por nome de cidade seja traduzida no backend diretamente para coordenadas `(lat, long)`.
-- *Axios no NestJS*: Encapsular Axios em serviço NestJS com timeout de 5s para garantia de resiliência.
+**Alternatives Considered:** 
+- *City Name Search via Geocoding API vs Direct Coordinates*: Implemented `GeocodingService` to translate city names directly into geographic coordinates `(lat, long)` in the backend.
 
-**Decisão do desenvolvedor:** Aprovado início da Fase 2.
+**Developer Decision:** Approved Phase 2 execution.
 
 **Timestamps**
-| Marco | Horário |
+| Milestone | Timestamp |
 |---|---|
-| Plano proposto | 03/08 às 11:17 |
-| Plano aprovado | 03/08 às 12:06 |
-| Implementação iniciada | 03/08 às 12:06 |
-| Implementação concluída | 03/08 às 12:12 |
-| Revisão do usuário concluída | 03/08 às 12:12 |
+| Proposal Created | 03/08 at 11:17 |
+| Proposal Approved | 03/08 at 12:06 |
+| Implementation Started | 03/08 at 12:06 |
+| Implementation Completed | 03/08 at 12:12 |
+| User Review Completed | 03/08 at 12:12 |
 
-**Resultado:** Módulo de integração com Open-Meteo (`WeatherModule`) implementado com sucesso. Serviços `GeocodingService` e `OpenMeteoClientService` criados com suporte a geocodificação de cidades por nome, busca de previsão para 7 dias, e resiliência graciosa para cidades continentais sem dados de mar.  
-**Pendências/observações:** Nenhuma.
+**Result:** `WeatherModule` created with `GeocodingService` and `OpenMeteoClientService` supporting 7-day daily weather forecasts and graceful degradation for inland locations.
 
 ---
 
-## Fase 3: Módulo de Scoring (`ScoringModule`)
+## Phase 3: Scoring Module (`ScoringModule`)
 
-**Plano proposto:** Implementação do módulo `ScoringModule` com algoritmos determinísticos de cálculo de pontuação (0-100) e justificativas em inglês (`reasons`) para as atividades Outdoor Sightseeing e Surfing.
+**Proposed Plan:** Implement `ScoringModule` with deterministic scoring evaluators (0–100) and English explanations (`reasons`) for Outdoor Sightseeing and Surfing activities.
 
-**Alternativas consideradas:** 
-- *Mensagens e Motivos em Inglês*: Garantir que todos os textos de resposta da API (`reasons`, `recommendationLevel`) estejam em inglês para integração fluida com o frontend em inglês.
-
-**Decisão do desenvolvedor:** Aprovado início da Fase 3 (às 12:46).
+**Developer Decision:** Approved Phase 3 execution.
 
 **Timestamps**
-| Marco | Horário |
+| Milestone | Timestamp |
 |---|---|
-| Plano proposto | 03/08 às 12:12 |
-| Plano aprovado | 03/08 às 12:46 |
-| Implementação iniciada | 03/08 às 12:46 |
-| Implementação concluída | 03/08 às 12:48 |
-| Revisão do usuário concluída | 03/08 às 12:48 |
+| Proposal Created | 03/08 at 12:12 |
+| Proposal Approved | 03/08 at 12:46 |
+| Implementation Started | 03/08 at 12:46 |
+| Implementation Completed | 03/08 at 12:48 |
+| User Review Completed | 03/08 at 12:48 |
 
-**Resultado:** Módulo de scoring (`ScoringModule`) implementado com sucesso. Avaliadores `OutdoorSightseeingEvaluator` e `SurfingEvaluator` criados com lógica determinística de pontuação de 0 a 100 e todas as justificativas (`reasons`) e classificações em inglês.  
-**Pendências/observações:** Nenhuma.
+**Result:** `OutdoorSightseeingEvaluator` and `SurfingEvaluator` implemented with deterministic scoring algorithms and English recommendations (`EXCELLENT`, `GOOD`, `FAIR`, `POOR`).
 
 ---
 
-## Fase 4: Resolvers GraphQL + Schema Code-First (`RankingModule`)
+## Phase 4: GraphQL Resolvers & Code-First Schema (`RankingModule`)
 
-**Plano proposto:** Configuração do `GraphQLModule` com `ApolloDriver` em `AppModule`, criação de `RankingResolver`, DTOs/ObjectTypes GraphQL (`ActivityRankingResultType`, `DailyScoreType`, `LocationSearchResultType`) e queries `rankActivity` e `searchLocations`.
+**Proposed Plan:** Configure `GraphQLModule` with `ApolloDriver` in `AppModule`, create `RankingResolver`, ObjectTypes (`ActivityRankingResultType`, `DailyScoreType`, `LocationSearchResultType`), and queries `rankActivity` and `searchLocations`.
 
-**Alternativas consideradas:** 
-- *Busca transparente por nome de cidade (`cityName`)*: O resolver encadeia `GeocodingService` -> `OpenMeteoClientService` -> `ScoringService`, simplificando a interface GraphQL.
-
-**Decisão do desenvolvedor:** Aprovado início da Fase 4 (às 13:22).
+**Developer Decision:** Approved Phase 4 execution.
 
 **Timestamps**
-| Marco | Horário |
+| Milestone | Timestamp |
 |---|---|
-| Plano proposto | 03/08 às 12:48 |
-| Plano aprovado | 03/08 às 13:22 |
-| Implementação iniciada | 03/08 às 13:22 |
-| Implementação concluída | 03/08 às 13:30 |
-| Revisão do usuário concluída | 03/08 às 13:30 |
+| Proposal Created | 03/08 at 12:48 |
+| Proposal Approved | 03/08 at 13:22 |
+| Implementation Started | 03/08 at 13:22 |
+| Implementation Completed | 03/08 at 13:30 |
+| User Review Completed | 03/08 at 13:30 |
 
-**Resultado:** Resolvers GraphQL e Schema Code-First (`RankingModule`) implementados com sucesso. Queries `rankActivity` e `searchLocations` integradas com o `GraphQLModule` do NestJS e Apollo Driver.  
-**Pendências/observações:** Nenhuma.
+**Result:** `RankingResolver` and GraphQL schema generated via NestJS Code-First.
 
 ---
 
-## Fase 5: Frontend React em Inglês (`apps/web`)
+## Phase 5: React Frontend Application (`apps/web`)
 
-**Plano proposto:** Interface React 19 + TypeScript + Vite + Apollo Client (`apps/web`) em Dark Theme com estética premium, Glassmorphism, input de busca por cidade, seletor de atividade (*Outdoor Sightseeing* / *Surfing*), hero card de score geral e grid dos 7 dias com justificativas em inglês.
+**Proposed Plan:** Build React 19 + TypeScript + Vite + Apollo Client application with Glassmorphism Dark Theme, city search autocomplete, activity selector, overall score hero card, and 7-day daily breakdown cards.
 
-**Alternativas consideradas:** 
-- *Vanilla CSS com variáveis de design*: Utilizar CSS custom properties em `apps/web/src/styles.css` para design limpo, fluido e responsivo.
-
-**Decisão do desenvolvedor:** Aprovado início da Fase 5 (às 16:23).
+**Developer Decision:** Approved Phase 5 execution.
 
 **Timestamps**
-| Marco | Horário |
+| Milestone | Timestamp |
 |---|---|
-| Plano proposto | 03/08 às 13:30 |
-| Plano aprovado | 03/08 às 16:23 |
-| Implementação iniciada | 03/08 às 16:23 |
-| Implementação concluída | 03/08 às 16:55 |
-| Revisão do usuário concluída | 03/08 às 16:55 |
+| Proposal Created | 03/08 at 13:30 |
+| Proposal Approved | 03/08 at 16:23 |
+| Implementation Started | 03/08 at 16:23 |
+| Implementation Completed | 03/08 at 16:55 |
+| User Review Completed | 03/08 at 16:55 |
 
-**Resultado:** Frontend React + Apollo Client (`apps/web`) implementado em inglês com estética premium Glassmorphism, Dark Theme, busca de cidades, seletor de atividades, score hero card e grid interativo de 7 dias com justificativas detalhadas.  
-**Pendências/observações:** Nenhuma.
+**Result:** Frontend built in English with glassmorphic UI, city autocomplete, activity selector, and Apollo Client integration.
 
 ---
 
-## Fase 6: Deploy, CORS e Documentação Final (`README.md`)
+## Phase 6: Deployment, CORS & Architecture Finalization
 
-**Plano proposto:** Configuração de CORS no NestJS (`apps/api/src/main.ts`), configuração de variáveis de ambiente para o Apollo Client (`apps/web/src/main.tsx`), criação do `README.md` principal da raiz com todas as seções exigidas pelo teste técnico da Collinson Group e consolidação final do Roadmap.
+**Proposed Plan:** Configure CORS in NestJS (`apps/api/src/main.ts`), set up Vite environment variables (`import.meta.env.VITE_GRAPHQL_URL`), create `README.md`, and execute deployment.
 
-**Alternativas consideradas:** 
-- *CORS Liberado para Cliente Web*: `app.enableCors()` configurado para permitir comunicação entre o frontend Vite (port 4200 ou Vercel) e o backend NestJS (port 3000 ou Render).
-- *Vite Env Variables*: Suporte a `import.meta.env.VITE_GRAPHQL_URL` para flexibilidade de deploy.
-
-**Decisão do desenvolvedor:** Conforme pré-acordado na Seção 6 do `spec/context-summary.md` e Seção 3 do `spec/nx-vercel-relatory.md`, o desenvolvedor acionou o fallback arquitetural para implantar a API Backend (`apps/api`) em container no **Render Free Tier**, mantendo o Frontend React na **Vercel**. Essa abordagem elimina todas as limitações e cold starts de funções Serverless, mantendo a API 100% fiel ao código original NestJS/Express standalone.
+**Developer Decision:** Pursuant to `spec/context-summary.md` Section 6, the developer executed the architectural fallback to deploy the backend API on **Render Free Tier** in a container, keeping the React frontend on **Vercel**.
 
 **Timestamps**
-| Marco | Horário |
+| Milestone | Timestamp |
 |---|---|
-| Plano proposto | 03/08 às 16:55 |
-| Plano aprovado | 03/08 às 17:15 |
-| Implementação iniciada | 03/08 às 17:15 |
-| Implementação concluída | 03/08 às 17:35 |
-| Tentativas Vercel Serverless | 03/08 às 19:30 às 21:30 |
-| Acionamento Fallback Render | 03/08 às 22:17 |
-| Revisão do usuário concluída | 03/08 às 22:18 |
+| Proposal Created | 03/08 at 16:55 |
+| Proposal Approved | 03/08 at 17:15 |
+| Implementation Started | 03/08 at 17:15 |
+| Initial Implementation Completed | 03/08 at 17:35 |
+| Vercel Serverless Function Debugging | 03/08 at 19:30 to 21:30 |
+| Executed Render Fallback & Cleanup | 03/08 at 22:17 to 22:30 |
+| Final Review & Documentation Polish | 04/08 at 12:25 to 12:45 |
 
-**Resultado:** Limpeza dos arquivos/adapters Serverless Vercel da API executada. Aplicação NestJS retornada ao formato standalone puro com suporte a CORS dinâmico (`FRONTEND_URL`), e guia de deploy no Render elaborado para disponibilização da API.  
-**Pendências/observações:** Nenhuma.
-
----
-
-## Resumo Final
-
-- **Tempo total de escrita e estruturação de código**: ~2 horas e 25 minutos
-  - *Fase 1 (Scaffold & Shared Types)*: ~30 min
-  - *Fase 2 (Open-Meteo WeatherModule)*: ~15 min
-  - *Fase 3 (ScoringModule)*: ~10 min
-  - *Fase 4 (GraphQL Resolvers & Schema)*: ~20 min
-  - *Fase 5 (Frontend React & Apollo Client)*: ~45 min
-  - *Fase 6 (Deploy, CORS, Integration Check & Docs)*: ~25 min
-- **Tempo total de revisão/aprovação**: ~4 horas (pausas humanas de leitura e validação estratégica)
-- **Principais trade-offs da entrega**:
-  - Foco na implementação profunda e arquiteturalmente sólida de **2 atividades** (*Outdoor Sightseeing* e *Surfing*) em vez de 4 rasas ("Quality > Quantity").
-  - Omissão de gerenciador de estado global extra (Redux/Zustand), utilizando o cache em memória do Apollo Client.
-- **O que seria feito diferente com mais tempo**:
-  - Implementação das 2 atividades restantes (*Skiing* e *Indoor Sightseeing*).
-  - Cobertura estendida de testes E2E com Playwright/Cypress.
-
-
-
-
-
+**Result:** Cleaned up Vercel serverless adapters, restored NestJS standalone HTTP architecture with dynamic CORS sanitization, and created Render Web Service deployment guide.
