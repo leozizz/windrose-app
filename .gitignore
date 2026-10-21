@@ -1,3 +1,34 @@
+# specs/.gitignore
+
+# ─── Commitados (imutáveis após setup — base permanente do projeto) ────
+# setup.md          ← prompt de configuração inicial — executar uma vez
+# spec.md           ← template de spec — PROJECT CONTEXT preenchido pelo setup.md
+# testing.md        ← convenções de teste — preenchido pelo setup.md
+# generate-spec.md  ← prompt de geração de spec por issue
+# instructions.md   ← prompt de implementação por issue
+# plan.md           ← template de plano — nunca preenchido diretamente
+# prompts.md        ← os três prompts de entrada do fluxo SDD
+# .gitignore        ← este arquivo
+
+# ─── Ignorados (instâncias geradas por issue — nunca commitar) ─────────
+#
+# REGRA: o agente NUNCA edita spec.md ou plan.md diretamente.
+# Ele cria spec.{issue}.md e plan.{issue}.md, que são ignorados abaixo.
+#
+# Exemplo para issue #42:
+#   specs/spec.42.md   → ignorado ✓
+#   specs/plan.42.md   → ignorado ✓
+
+spec.*.md
+plan.*.md
+
+# Arquivos auxiliares gerados por sessão de agente
+context.md
+revision.md
+prompt-fe-cross.md
+*.local.md
+*.draft.md
+
 # Logs
 logs
 *.log
