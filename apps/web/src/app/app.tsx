@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ActivityType,
   ActivityRankingResult,
@@ -8,8 +8,10 @@ import { apiClient } from '../services/api.client';
 import { useTripSession } from '../hooks/useTripSession';
 import { SwipeDeck } from '../components/SwipeDeck';
 import { MatchesList } from '../components/MatchesList';
+import { ItineraryView } from '../components/ItineraryView';
+import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
 
-type ActiveTab = 'weather' | 'swipe' | 'matches';
+type ActiveTab = 'weather' | 'swipe' | 'matches' | 'itinerary';
 
 export function App() {
   const [cityNameInput, setCityNameInput] = useState<string>('Florianópolis');
@@ -77,6 +79,18 @@ export function App() {
     if (!cityNameInput.trim()) return;
     fetchData(cityNameInput.trim(), selectedActivity);
   };
+
+  // Weather-Smart Itinerary derived reactively from matches + daily weather
+  const itinerary = useMemo(() => {
+    if (!ranking) {
+      return { city: activeCity, days: [], totalPlacesScheduled: 0 };
+    }
+    return ItineraryPlannerEngine.buildSmartItinerary(
+      activeCity,
+      session.likedPois,
+      ranking.dailyScores
+    );
+  }, [activeCity, session.likedPois, ranking]);
 
   const formatDate = (dateStr: string) => {
     try {
@@ -187,6 +201,19 @@ export function App() {
 
           <button
             type="button"
+            className={`tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
+            onClick={() => setActiveTab('itinerary')}
+          >
+            🗺️ Roteiro Inteligente
+            {itinerary.totalPlacesScheduled > 0 && (
+              <span className="tab-pill pill-itinerary">
+                {itinerary.totalPlacesScheduled}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
             className={`tab-btn ${activeTab === 'weather' ? 'active' : ''}`}
             onClick={() => setActiveTab('weather')}
           >
@@ -226,6 +253,14 @@ export function App() {
             matches={session.likedPois}
             onBackToSwipe={() => setActiveTab('swipe')}
             onClearMatches={session.clearSession}
+            onGenerateItinerary={() => setActiveTab('itinerary')}
+          />
+        )}
+
+        {activeTab === 'itinerary' && (
+          <ItineraryView
+            itinerary={itinerary}
+            onBackToSwipe={() => setActiveTab('swipe')}
           />
         )}
 
