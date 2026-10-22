@@ -20,12 +20,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   onViewMatches,
   totalLikes,
 }) => {
-  // Filter out places that have already been swiped in this session
   const remainingPlaces = places.filter((p) => !isSwiped(p.id));
   const currentCard = remainingPlaces[0];
   const nextCard = remainingPlaces[1];
 
-  // Drag interaction state
+  // Drag interaction physics state (only transform coordinates kept in state)
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const startPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -78,7 +77,6 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     };
   }, [isDragging, handleTouchMove, handleTouchEnd]);
 
-  // Keyboard navigation for accessibility
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentCard) return;
@@ -95,8 +93,8 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   }, [currentCard, canUndo, onSwipe, onUndo]);
 
   const rotation = dragOffset.x * 0.08;
-  const likeOpacity = Math.min(1, Math.max(0, dragOffset.x / 80));
-  const rejectOpacity = Math.min(1, Math.max(0, -dragOffset.x / 80));
+  const isDraggingRight = dragOffset.x > 25;
+  const isDraggingLeft = dragOffset.x < -25;
 
   if (!currentCard) {
     return (
@@ -138,12 +136,14 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       </div>
 
       <div className="deck-stage">
-        {/* Next Card underneath for depth */}
+        {/* Next Card underneath for 3D depth */}
         {nextCard && (
           <div className="swipe-card card-underneath" aria-hidden="true">
-            <div
-              className="card-media-background"
-              style={{ backgroundImage: `url(${nextCard.imageUrl})` }}
+            <img
+              src={nextCard.imageUrl}
+              alt={nextCard.name}
+              className="card-cover-media"
+              loading="lazy"
             />
             <div className="card-gradient-overlay" />
             <div className="card-content">
@@ -153,35 +153,34 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           </div>
         )}
 
-        {/* Top Active Card */}
+        {/* Top Active Card with real-time drag transforms */}
         <div
           className={`swipe-card card-active ${isDragging ? 'is-dragging' : ''}`}
           style={{
             transform: `translate3d(${dragOffset.x}px, ${dragOffset.y * 0.4}px, 0) rotate(${rotation}deg)`,
-            transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1)',
           }}
           onMouseDown={handleTouchStart}
           onTouchStart={handleTouchStart}
           role="article"
           aria-label={`${currentCard.name}, ${currentCard.category}`}
         >
-          <div
-            className="card-media-background"
-            style={{ backgroundImage: `url(${currentCard.imageUrl})` }}
+          <img
+            src={currentCard.imageUrl}
+            alt={currentCard.name}
+            className="card-cover-media"
+            draggable={false}
           />
           <div className="card-gradient-overlay" />
 
-          {/* Swipe Action Visual Stamps */}
+          {/* Swipe Action Visual Stamps via state classes */}
           <div
-            className="swipe-stamp stamp-like"
-            style={{ opacity: likeOpacity }}
+            className={`swipe-stamp stamp-like ${isDraggingRight ? 'visible' : ''}`}
             aria-hidden="true"
           >
             MATCH ❤️
           </div>
           <div
-            className="swipe-stamp stamp-reject"
-            style={{ opacity: rejectOpacity }}
+            className={`swipe-stamp stamp-reject ${isDraggingLeft ? 'visible' : ''}`}
             aria-hidden="true"
           >
             PASSAR ❌

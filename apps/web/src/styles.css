@@ -254,6 +254,11 @@ body {
   color: #34d399;
 }
 
+.tab-pill.pill-itinerary {
+  background: rgba(6, 182, 212, 0.25);
+  color: #38bdf8;
+}
+
 /* Swipe Deck Container */
 .swipe-deck-container {
   display: flex;
@@ -308,6 +313,17 @@ body {
   border: 1px solid var(--card-border);
   user-select: none;
   touch-action: none;
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+.card-cover-media {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
 }
 
 .card-underneath {
@@ -324,16 +340,7 @@ body {
 
 .card-active.is-dragging {
   cursor: grabbing;
-}
-
-.card-media-background {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-size: cover;
-  background-position: center;
+  transition: none;
 }
 
 .card-gradient-overlay {
@@ -343,6 +350,7 @@ body {
   width: 100%;
   height: 100%;
   background: linear-gradient(180deg, rgba(7, 9, 14, 0.1) 0%, rgba(7, 9, 14, 0.4) 45%, rgba(7, 9, 14, 0.95) 100%);
+  pointer-events: none;
 }
 
 .card-content {
@@ -444,7 +452,12 @@ body {
   text-transform: uppercase;
   z-index: 20;
   pointer-events: none;
-  transition: opacity 0.1s ease;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.swipe-stamp.visible {
+  opacity: 1;
 }
 
 .stamp-like {
@@ -522,8 +535,10 @@ body {
   color: var(--text-muted);
 }
 
-/* Empty Deck State */
-.empty-deck-card {
+/* Empty States */
+.empty-deck-card,
+.empty-itinerary-card,
+.empty-matches-card {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -533,22 +548,26 @@ body {
   border: 1px solid var(--card-border);
   border-radius: 1.75rem;
   padding: 3rem 2rem;
-  max-width: 450px;
-  margin: 0 auto;
+  max-width: 500px;
+  margin: 1.5rem auto;
 }
 
-.empty-deck-icon {
+.empty-deck-icon,
+.empty-itinerary-icon,
+.empty-matches-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
 }
 
-.empty-deck-title {
+.empty-deck-title,
+.empty-itinerary-title {
   font-size: 1.5rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
 }
 
-.empty-deck-text {
+.empty-deck-text,
+.empty-itinerary-text {
   color: var(--text-secondary);
   font-size: 0.95rem;
   margin-bottom: 2rem;
@@ -610,6 +629,7 @@ body {
 .matches-actions-group {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .action-button-secondary {
@@ -634,26 +654,6 @@ body {
   cursor: pointer;
 }
 
-.empty-matches-card {
-  text-align: center;
-  background: var(--card-bg);
-  border: 1px dashed var(--card-border);
-  border-radius: 1.5rem;
-  padding: 3.5rem 2rem;
-  max-width: 500px;
-  margin: 2rem auto;
-}
-
-.empty-matches-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-}
-
-.empty-matches-card p {
-  color: var(--text-secondary);
-  margin: 0.5rem 0 1.5rem;
-}
-
 .matches-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -676,18 +676,23 @@ body {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
 }
 
-.match-thumbnail {
+.match-thumbnail-wrapper {
   position: relative;
   width: 100%;
   height: 180px;
-  background-size: cover;
-  background-position: center;
-  display: flex;
-  align-items: flex-start;
-  padding: 0.75rem;
+  overflow: hidden;
+}
+
+.match-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .match-category-pill {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
   padding: 0.2rem 0.5rem;
   background: rgba(7, 9, 14, 0.75);
   backdrop-filter: blur(6px);
@@ -726,6 +731,264 @@ body {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Itinerary View Styles */
+.itinerary-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.itinerary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  border-bottom: 1px solid var(--card-border);
+  padding-bottom: 1.25rem;
+}
+
+.itinerary-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  color: #38bdf8;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.itinerary-title {
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.itinerary-subtitle {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.itinerary-export-bar {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.export-btn {
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-calendar {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.btn-calendar:hover {
+  background: rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-pdf {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+.btn-pdf:hover {
+  background: rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.itinerary-days-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.itinerary-day-section {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+}
+
+.day-meta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--card-border);
+}
+
+.day-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.day-counter {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--accent-secondary);
+  background: rgba(6, 182, 212, 0.15);
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.35rem;
+}
+
+.day-heading {
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.day-weather-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.weather-alert-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.4rem;
+  background: rgba(244, 63, 94, 0.2);
+  color: #fb7185;
+}
+
+.slots-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.itinerary-slot-card {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid var(--card-border);
+  border-radius: 1rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.slot-badge-column {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0.85rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-bottom: 1px solid var(--card-border);
+}
+
+.slot-period-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: #e2e8f0;
+}
+
+.slot-time {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.slot-image-container {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  overflow: hidden;
+}
+
+.slot-cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.slot-category-chip {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  background: rgba(7, 9, 14, 0.8);
+  backdrop-filter: blur(4px);
+  border-radius: 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.slot-details {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.slot-place-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.slot-place-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.slot-optimization-note {
+  font-size: 0.75rem;
+  color: #38bdf8;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.25);
+  border-radius: 0.4rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.slot-footer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--card-border);
+}
+
+.btn-add-gcal {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-secondary);
+  text-decoration: none;
+  padding: 0.25rem 0.5rem;
+  background: rgba(6, 182, 212, 0.1);
+  border-radius: 0.35rem;
+  transition: all 0.2s ease;
+}
+
+.btn-add-gcal:hover {
+  background: rgba(6, 182, 212, 0.25);
 }
 
 /* Weather Hero & 7-Day Grid */
@@ -901,4 +1164,56 @@ body {
 
 .app-footer a:hover {
   text-decoration: underline;
+}
+
+/* Print Stylesheet for High-Fidelity Editorial PDF Export */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  .app-header,
+  .search-card,
+  .mode-tabs-nav,
+  .itinerary-export-bar,
+  .btn-add-gcal,
+  .app-footer {
+    display: none !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  .itinerary-section,
+  .itinerary-day-section {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+    page-break-inside: avoid;
+    margin-bottom: 1.5rem;
+  }
+
+  .day-heading,
+  .itinerary-title,
+  .slot-place-name {
+    color: #0f172a !important;
+  }
+
+  .itinerary-slot-card {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  .slot-place-desc,
+  .itinerary-subtitle {
+    color: #475569 !important;
+  }
+
+  .slot-cover-image {
+    max-height: 100px;
+  }
 }

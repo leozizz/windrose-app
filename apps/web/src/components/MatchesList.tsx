@@ -6,6 +6,7 @@ interface MatchesListProps {
   matches: PointOfInterest[];
   onBackToSwipe: () => void;
   onClearMatches: () => void;
+  onGenerateItinerary: () => void;
 }
 
 export const MatchesList: React.FC<MatchesListProps> = ({
@@ -13,6 +14,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
   matches,
   onBackToSwipe,
   onClearMatches,
+  onGenerateItinerary,
 }) => {
   return (
     <div className="matches-container">
@@ -33,14 +35,23 @@ export const MatchesList: React.FC<MatchesListProps> = ({
             ← Continuar Explorando
           </button>
           {matches.length > 0 && (
-            <button
-              type="button"
-              className="action-button-danger"
-              onClick={onClearMatches}
-              title="Limpar todos os matches desta cidade"
-            >
-              Limpar Lista
-            </button>
+            <>
+              <button
+                type="button"
+                className="action-button-primary"
+                onClick={onGenerateItinerary}
+              >
+                🗺️ Ver Roteiro Inteligente →
+              </button>
+              <button
+                type="button"
+                className="action-button-danger"
+                onClick={onClearMatches}
+                title="Limpar todos os matches desta cidade"
+              >
+                Limpar Lista
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -65,10 +76,13 @@ export const MatchesList: React.FC<MatchesListProps> = ({
         <div className="matches-grid">
           {matches.map((place) => (
             <div key={place.id} className="match-card">
-              <div
-                className="match-thumbnail"
-                style={{ backgroundImage: `url(${place.imageUrl})` }}
-              >
+              <div className="match-thumbnail-wrapper">
+                <img
+                  src={place.imageUrl}
+                  alt={place.name}
+                  className="match-thumbnail-img"
+                  loading="lazy"
+                />
                 <span className="match-category-pill">{place.category}</span>
               </div>
               <div className="match-body">
