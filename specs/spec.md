@@ -25,10 +25,10 @@
 Framework:      React 19
 Linguagem:      TypeScript 5 (Strict Mode)
 Build:          Vite
-Estilização:    CSS Variables, Glassmorphism Dark Theme, Modern CSS
+Estilização:    CSS Variables, Classes Utilitárias / TailwindCSS, Dark Theme Glassmorphic
 Componentes:    Componentes Customizados, micro-interações de Swipe, Lucide Icons
 Roteamento:     React Router DOM 6
-Estado:         Local Session State (LocalStorage com Zod), React Hooks (migrando de Apollo Client)
+Estado:         Local Session State (LocalStorage com Zod), React Hooks (migrado de Apollo Client)
 ```
 
 ### Backend
@@ -46,8 +46,9 @@ ORM / Query:    Drizzle ORM (Fase 2)
 Migrations:     drizzle-kit (Fase 2)
 ```
 
-### Infraestrutura
+### Infraestrutura & Repositório
 ```
+Estrutura:      Monorepo NX em transição planejada para pnpm workspaces puro
 Hospedagem:     Cloudflare Workers (Backend Edge) & Cloudflare Pages / Vercel (Frontend)
 Storage:        Client-side (LocalStorage, ICS download, PDF export)
 CI/CD:          GitHub Actions / Cloudflare Pages / Vercel
@@ -60,9 +61,11 @@ CI/CD:          GitHub Actions / Cloudflare Pages / Vercel
 ```bash
 # Gerenciador de pacotes e monorepo
 pnpm                     # Instalação e execução de dependências
-pnpm nx                  # Orquestrador de tarefas do monorepo Nx
+pnpm nx                  # Orquestrador de tarefas do monorepo Nx (em transição para pnpm workspaces)
 pnpm nx dev web          # Executar frontend em modo desenvolvimento (porta 4200)
+pnpm nx dev edge-api     # Executar backend Hono com Wrangler localmente
 pnpm nx test web         # Executar testes do frontend com Vitest
+pnpm nx test edge-api    # Executar testes do backend edge com Vitest
 
 # GitHub CLI
 gh                       # Interação com issues, PRs e repositório GitHub
@@ -80,7 +83,7 @@ wrangler                 # CLI do Cloudflare Workers / Pages
 ```
 apps/
   edge-api/              # Novo Backend Edge com HonoJS (Cloudflare Workers)
-  api/                   # Legado NestJS + GraphQL (em fase de descarte)
+  api/                   # Legado NestJS + GraphQL (em fase de descarte / Fase 5)
   web/                   # Frontend React 19 + Vite (UI Glassmorphic + Swipe Deck)
 libs/
   shared-types/          # Contratos, DTOs e tipos compartilhados
@@ -106,11 +109,13 @@ Documentação interna:      docs/, specs/, README.md
 
 ```
 - TypeScript Strict: Proibido o uso de 'any' sem justificativa formal; tipagem estrita end-to-end.
+- Clean Code & CSS Limpo: PROIBIDO o uso de styles inline ('style={{...}}') no JSX, exceto exclusivamente para cálculo contínuo de coordenadas de física de arrasto (drag coordinates) em animações em tempo real onde classes CSS não comportam valores arbitrários contínuos. Toda estilização visual deve residir em classes CSS reutilizáveis ou utilitários TailwindCSS.
 - Clean Architecture (Robert C. Martin): As regras de cálculo de clima e geração de roteiros devem ser funções puras de domínio, desacopladas de frameworks (Hono, React, NestJS).
 - Custo 100% Gratuito ($0.00): Utilizar estritamente provedores com free tier vitalício (Cloudflare Workers, Open-Meteo, OpenStreetMap Overpass, Wikimedia).
 - Edge Native: O backend não deve depender de módulos exclusivos de Node.js (como 'fs' ou processos locais de longa duração).
 - Stateless na Fase 1: Sem dependência de banco de dados no lançamento inicial; estado mantido em sessão/localStorage e exportações client-side (.ics e PDF).
 - Acessibilidade: Interações complexas como o Swipe Deck devem ter fallbacks acessíveis via teclado e botões (WCAG 2.2).
+- Monorepo Simplificado: Planejado descarte do ecossistema pesado do Nx na Fase 5 em favor de pnpm workspaces nativo para simplificar a manutenção.
 ```
 
 <!-- ═══ FIM DO PROJECT CONTEXT ═══ -->
