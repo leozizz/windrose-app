@@ -1,123 +1,85 @@
-# Windrose App — 7-Day Weather Activity Ranking Platform
+# Windrose App — Weather-Smart Travel Planner & Tinder-Style POI Discovery
 
-[![Monorepo: NX](https://img.shields.io/badge/Monorepo-NX-blue.svg)](https://nx.dev/)
-[![Backend: NestJS](https://img.shields.io/badge/Backend-NestJS-E0234E.svg)](https://nestjs.com/)
-[![API: GraphQL](https://img.shields.io/badge/API-GraphQL-E10098.svg)](https://graphql.org/)
+[![Workspace: pnpm](https://img.shields.io/badge/Workspace-pnpm_v11-orange.svg)](https://pnpm.io/)
+[![Backend: HonoJS](https://img.shields.io/badge/Backend-HonoJS_Edge-E36002.svg)](https://hono.dev/)
+[![Cloud: Cloudflare Workers](https://img.shields.io/badge/Runtime-Cloudflare_Workers-F38020.svg)](https://workers.cloudflare.com/)
 [![Frontend: React 19](https://img.shields.io/badge/Frontend-React_19-61DAFB.svg)](https://react.dev/)
 [![Language: TypeScript](https://img.shields.io/badge/Language-TypeScript_Strict-3178C6.svg)](https://www.typescriptlang.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Windrose App is a modern, scalable web application designed to evaluate travel destinations over a 7-day period for weather-dependent activities. Built with **React 19**, **NestJS**, **GraphQL Code-First**, and **NX Monorepo**, the platform consumes real-time weather and marine data from **Open-Meteo APIs** to compute deterministic scores (0–100) and human-readable recommendations.
-
----
-
-## Project Navigation & Roadmaps
-
-- **[Development Roadmap & Timestamps](docs/ROADMAP.md)**
-
----
-
-## Application Deployment
-
-- **Windrose App (Vercel)**: https://windrose-app-eight.vercel.app/
-- **Windrose Api (Render)**: https://windrose-api.onrender.com/api
+**Windrose App** é uma aplicação web moderna e inteligente projetada para transformar o planejamento de viagens:
+1. **Avaliação Climática (Open-Meteo)**: Análise determinística de viabilidade para atividades ao ar livre e surf em uma janela de 7 dias com notas de 0 a 100.
+2. **Descoberta Estilo Tinder (Swipe Deck)**: Navegação interativa por cartões de pontos turísticos, museus, praias, restaurantes e bares (via OpenStreetMap Overpass API e Wikimedia Commons).
+3. **Roteirizador Inteligente Contextual**: Organização automática dos lugares curtidos em períodos diários (Manhã, Tarde, Noite), realocando atividades ao ar livre para dias ensolarados e museus/gastronomia para dias com previsão de chuva ou ventos severos.
+4. **Exportação Sem Fricção**: Download de arquivo de calendário padrão `.ics` (Google Calendar, Apple Calendar e Outlook), deep links diretos e impressão em PDF customizado de alta fidelidade.
+5. **Custo $0.00 & Latência Global**: Backend 100% serverless/edge construído com **HonoJS** no **Cloudflare Workers**, eliminando cold starts e custos de hospedagem.
 
 ---
 
-## 1. Architecture Overview & Technical Decisions
+## 1. Documentação & Arquitetura
 
-### Monorepo Architecture (NX)
-The repository is structured as an **NX Monorepo** to enforce strict separation of concerns, shared TypeScript contracts, and build-cache optimization:
-- **`apps/web`**: Single Page Application built with **React 19 + TypeScript + Vite**. Consumes GraphQL queries using **Apollo Client** (`@apollo/client/react`) with an ultra-responsive, glassmorphic Dark Theme interface.
-- **`apps/api`**: Standalone backend application built with **Node.js + NestJS** exposing a Code-First GraphQL API powered by `@nestjs/graphql` and `@nestjs/apollo` (Apollo Driver).
-- **`libs/shared-types`** (`@windrose/shared-types`): Shared domain library containing TypeScript DTOs, Enums (`ActivityType`), and Interfaces used across both frontend and backend packages.
+- **[Relatório de Viabilidade e Migração](docs/FEASIBILITY_AND_MIGRATION_REPORT.md)**
+- **[Especificações de Desenvolvimento (SDD)](specs/)**
 
-### Backend Modular Domain Design
-The NestJS backend is organized into decoupled domain modules:
+### Estrutura do Workspace (pnpm Workspaces)
 
 ```
-apps/api/src/app/
-├── weather/            # Open-Meteo Geocoding, Forecast & Marine Weather HTTP Integration
-│   ├── geocoding.service.ts
-│   └── open-meteo.client.ts
-├── scoring/            # Activity Scoring Engine & Evaluators
-│   ├── evaluators/
-│   │   ├── outdoor-sightseeing.evaluator.ts
-│   │   └── surfing.evaluator.ts
-│   └── scoring.service.ts
-└── ranking/            # GraphQL Code-First Resolvers & Schema Types
-    └── ranking.resolver.ts
+apps/
+├── edge-api/             # Backend Edge nativo com Hono.js no Cloudflare Workers
+│   ├── src/
+│   │   ├── core/         # Lógica pura de domínio (Clean Architecture)
+│   │   │   ├── evaluators/  # Avaliadores de clima (Sightseeing, Surfing)
+│   │   │   └── places/      # Orquestrador e curadoria de POIs
+│   │   ├── infrastructure/  # Gateways HTTP (Open-Meteo, Overpass, Wikimedia)
+│   │   └── routes/          # Rotas HTTP com validação Zod e tipagem RPC
+│   └── wrangler.toml     # Configuração do Cloudflare Workers
+└── web/                  # Single Page Application (React 19 + Vite + CSS Glassmorphic)
+    ├── src/
+    │   ├── components/   # SwipeDeck, MatchesList, ItineraryView
+    │   ├── hooks/        # useTripSession (LocalStorage Stateless)
+    │   └── services/     # ItineraryPlannerEngine, CalendarExporter, ApiClient
+libs/
+└── shared-types/         # Contratos, DTOs e Enums compartilhados
 ```
 
-- **`WeatherModule`**:
-  - `GeocodingService`: Translates city names (e.g., *"Florianópolis"*, *"Honolulu"*, *"Aspen"*) into geographic coordinates using Open-Meteo Geocoding API.
-  - `OpenMeteoClientService`: Fetches 7-day daily weather forecasts (temperatures, precipitation, wind, weather code) and coastal marine data (wave height, wave period). Gracefully handles inland locations where ocean wave data is unavailable.
-- **`ScoringModule`**:
-  - `OutdoorSightseeingEvaluator`: Evaluates weather parameters against optimal sightseeing conditions (18°C–26°C, low precipitation, clear skies, gentle wind).
-  - `SurfingEvaluator`: Evaluates wave height (1.0m–2.5m optimal), groundswell wave period (>10s), and coastal wind speeds.
-  - `ScoringService`: Calculates 7-day overall average scores (0–100), assigns recommendation levels (`EXCELLENT`, `GOOD`, `FAIR`, `POOR`), and generates English explanation bullet points (`reasons`).
-- **`RankingModule`**: Exposes the `rankActivity` and `searchLocations` GraphQL queries through `RankingResolver`.
+---
+
+## 2. Como Rodar Localmente
+
+### Pré-requisitos
+- **Node.js**: v20+ ou v24+
+- **pnpm**: v11+ (`npm install -g pnpm`)
+
+### Instalação
+
+```bash
+git clone https://github.com/leozizz/windrose-app.git
+cd windrose-app
+pnpm install
+```
+
+### Comandos de Desenvolvimento
+
+| Comando | Descrição |
+| :--- | :--- |
+| `pnpm dev` | Inicia o Frontend React 19 com Vite em `http://localhost:4200` |
+| `pnpm dev:edge` | Inicia a Edge API com Wrangler em `http://localhost:8787` |
+| `pnpm test` | Executa a suíte completa de 35 testes automatizados com Vitest |
+| `pnpm build` | Compila o frontend para produção (`dist/apps/web`) |
+| `pnpm build:edge` | Executa dry-run do bundle do Cloudflare Worker |
 
 ---
 
-## 2. How AI Assisted in the Process
+## 3. Endpoints da Edge API
 
-This project was crafted using **Spec-Driven Development (SDD)** in pair programming with **Antigravity AI**:
-
-1. **Structured Phase Proposals**: Before writing code, AI generated detailed proposal documents outlining technical trade-offs, architecture alternatives, and timestamps for human developer review and approval.
-2. **Quality Control & Code Generation**: AI assisted in scaffolding the NX monorepo, declaring strict TypeScript interfaces, writing English TSDoc comments, and implementing scoring logic without relying on untyped `any`.
-3. **Real-Time Auditing**: Development milestones were audited and recorded in real-time in `docs/ROADMAP.md`.
-
----
-
-## 3. Omissions & Trade-offs
-
-In accordance with technical test guidelines (**Quality > Quantity**, 2–3 hours time budget):
-
-- **Activity Scope Focus (2 of 4 Activities)**: Implemented 2 comprehensive, deeply scored activities (**Outdoor Sightseeing** & **Surfing**) rather than 4 superficial ones. *Skiing* and *Indoor Sightseeing* were intentionally omitted and can be added seamlessly via new evaluator providers in `ScoringModule`.
-- **Global State Management**: Omitted Redux/Zustand; state is managed cleanly using React local state and Apollo Client's in-memory cache.
-- **Backend Deployment Target**: Deployed the API as a containerized Web Service on **Render Free Tier** rather than Vercel Serverless. This eliminates serverless read-only filesystem constraints, removes cold-starts, and preserves the native NestJS/Express standalone architecture.
-- **External API Resilience & Caching**: Implemented in-memory TTL caching (24h for geocoding, 15m for forecasts), custom User-Agent headers, and stale fallback mechanisms in `WeatherModule`. This prevents HTTP 429 rate-limiting on shared cloud IP environments (Render Free Tier) and ensures high availability during live evaluation demos.
-- **Automated Testing & E2E Templates**: The default NX-generated `apps/api-e2e` test application was removed to streamline the monorepo footprint. While Test-Driven Development (TDD) combined with Spec-Driven Development (SDD) is my preferred engineering workflow, automated test suites (unit/E2E) were omitted due to strict time constraints, prioritizing architectural depth, domain separation, and full-stack integration.
-- **Pragmatic `any` & Type Assertions**: A minimal number of `any` types and type assertions exist across edge-case boundaries (such as dynamic Open-Meteo API payload responses and Apollo Client v4 exports) to meet the delivery deadline. In a production polish phase, these would be refactored into strict runtime validation schemas (e.g., Zod) and custom type guards for 100% uncompromising type safety.
+- `GET /health`: Diagnóstico de saúde do serviço.
+- `GET /api/weather/rank?city=:city&activity=:activity`: Avaliação e motivos determinísticos para os 7 dias.
+- `GET /api/weather/search?q=:query`: Busca geográfica de coordenadas.
+- `GET /api/places/deck?city=:city&lat=:lat&lon=:lon`: Baralho de lugares para a experiência Tinder Swipe com Edge Caching (7 dias).
+- `GET /api/places/curated-cities`: Cidades com curadoria nativa verificada.
 
 ---
 
-## 4. How to Run Locally
+## 4. Licença
 
-### Prerequisites
-- **Node.js**: v20+ or v24+
-- **pnpm**: v9+ or v11+ (`npm install -g pnpm`)
-
-### Installation & Setup
-
-1. **Clone the repository and install dependencies**:
-   ```bash
-   git clone <repository-url>
-   cd windrose-app
-   pnpm install
-   ```
-
-2. **Run the Backend API (NestJS + GraphQL)**:
-   ```bash
-   pnpm nx dev api
-   ```
-   - API REST endpoint: `http://localhost:3000/api`
-   - GraphQL Playground: `http://localhost:3000/graphql`
-
-3. **Run the Frontend Web Application (React + Vite)**:
-   ```bash
-   pnpm nx dev web
-   ```
-   - Web application: `http://localhost:4200`
-
-4. **Build Monorepo Projects**:
-   ```bash
-   pnpm nx run-many --target=build
-   ```
-
----
-
-## 5. Documentation Links
-
-- **Roadmap & Timestamps**: [docs/ROADMAP.md](docs/ROADMAP.md)
-- **Generated GraphQL Schema**: [apps/api/src/schema.gql](apps/api/src/schema.gql)
+Este projeto está sob a licença [MIT](LICENSE).
