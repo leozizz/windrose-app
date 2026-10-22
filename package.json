@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261019.1",
     "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
@@ -51,12 +52,14 @@
     "vitest": "~4.1.0",
     "webpack": "^5.101.3",
     "webpack-cli": "^7.0.0",
-    "webpack-dev-server": "^5.2.1"
+    "webpack-dev-server": "^5.2.1",
+    "wrangler": "^4.151.3"
   },
   "dependencies": {
     "@apollo/client": "^4.2.9",
     "@apollo/server": "^5.5.1",
     "@as-integrations/express5": "^1.1.2",
+    "@hono/zod-validator": "^0.9.1",
     "@nestjs/apollo": "^13.4.2",
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
@@ -64,10 +67,12 @@
     "@nestjs/platform-express": "^11.0.0",
     "axios": "^1.6.0",
     "graphql": "^16.14.2",
+    "hono": "^4.13.13",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "6.30.3",
     "reflect-metadata": "^0.2.0",
-    "rxjs": "^7.8.0"
+    "rxjs": "^7.8.0",
+    "zod": "^4.6.7"
   }
 }
