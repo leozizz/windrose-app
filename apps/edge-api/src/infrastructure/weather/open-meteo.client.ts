@@ -23,7 +23,8 @@ interface MarineApiResponse {
 }
 
 /**
- * Native Edge client for Open-Meteo Forecast & Marine Weather APIs.
+ * Native Edge client for Open-Meteo Forecast & Marine Weather APIs with automatic retry
+ * and resilience against upstream network/SSL hiccups (such as Cloudflare 525 errors).
  */
 export class OpenMeteoClient {
   private static readonly forecastUrl = 'https://api.open-meteo.com/v1/forecast';
@@ -46,7 +47,7 @@ export class OpenMeteoClient {
     }
 
     const [forecastResult, marineResult] = await Promise.allSettled([
-      this.fetchForecast(latitude, longitude),
+      this.fetchForecastWithRetry(latitude, longitude),
       this.fetchMarine(latitude, longitude),
     ]);
 
@@ -87,6 +88,38 @@ export class OpenMeteoClient {
     return result;
   }
 
+  private static async fetchForecastWithRetry(
+    latitude: number,
+    longitude: number,
+    retries = 2
+  ): Promise<ForecastApiResponse> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        return await this.fetchForecast(latitude, longitude);
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        // Retry only on transient network, handshake or 5xx errors
+        const isTransient =
+          lastError.message.includes('525') ||
+          lastError.message.includes('502') ||
+          lastError.message.includes('503') ||
+          lastError.message.includes('504') ||
+          lastError.message.includes('fetch');
+
+        if (!isTransient || attempt === retries) {
+          break;
+        }
+
+        // Wait before next attempt
+        await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)));
+      }
+    }
+
+    throw lastError || new Error('Failed to fetch forecast from Open-Meteo');
+  }
+
   private static async fetchForecast(latitude: number, longitude: number): Promise<ForecastApiResponse> {
     const url = new URL(this.forecastUrl);
     url.searchParams.set('latitude', latitude.toString());
@@ -100,7 +133,7 @@ export class OpenMeteoClient {
 
     const res = await fetch(url.toString(), {
       headers: {
-        'User-Agent': 'WindroseApp-Edge/2.0 (Cloudflare-Workers)',
+        'User-Agent': 'WindroseApp/2.0 (weather-ranking)',
         Accept: 'application/json',
       },
     });
@@ -127,7 +160,7 @@ export class OpenMeteoClient {
     try {
       const res = await fetch(url.toString(), {
         headers: {
-          'User-Agent': 'WindroseApp-Edge/2.0 (Cloudflare-Workers)',
+          'User-Agent': 'WindroseApp/2.0 (weather-ranking)',
           Accept: 'application/json',
         },
       });
