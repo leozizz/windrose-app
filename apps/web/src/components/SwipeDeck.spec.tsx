@@ -64,7 +64,7 @@ describe('SwipeDeck Component', () => {
       />
     );
 
-    const likeButton = screen.getByRole('button', { name: /curtir este local/i });
+    const likeButton = screen.getByRole('button', { name: /curtir/i });
     fireEvent.click(likeButton);
 
     expect(handleSwipe).toHaveBeenCalledTimes(1);
@@ -86,7 +86,7 @@ describe('SwipeDeck Component', () => {
       />
     );
 
-    const rejectButton = screen.getByRole('button', { name: /rejeitar este local/i });
+    const rejectButton = screen.getByRole('button', { name: /rejeitar/i });
     fireEvent.click(rejectButton);
 
     expect(handleSwipe).toHaveBeenCalledTimes(1);
@@ -106,7 +106,7 @@ describe('SwipeDeck Component', () => {
       />
     );
 
-    expect(screen.getByText(/você explorou todos os lugares/i)).toBeDefined();
-    expect(screen.getByText(/ver meus matches \(2\)/i)).toBeDefined();
+    expect(screen.getByText(/você explorou todos os locais/i)).toBeDefined();
+    expect(screen.getByText(/ver 2 matches/i)).toBeDefined();
   });
 });

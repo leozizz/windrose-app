@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { PointOfInterest, PoiEnvironment } from '@windrose/shared-types';
+import { PointOfInterest } from '@windrose/shared-types';
 
 interface SwipeDeckProps {
   places: PointOfInterest[];
@@ -24,7 +24,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const currentCard = remainingPlaces[0];
   const nextCard = remainingPlaces[1];
 
-  // Drag interaction physics state (only transform coordinates kept in state)
+  // Drag interaction physics
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const startPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -52,10 +52,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     if (!isDragging) return;
     setIsDragging(false);
 
-    const threshold = 100;
-    if (dragOffset.x > threshold && currentCard) {
+    // Swipe threshold: 110px
+    if (dragOffset.x > 110 && currentCard) {
       onSwipe(currentCard, 'liked');
-    } else if (dragOffset.x < -threshold && currentCard) {
+    } else if (dragOffset.x < -110 && currentCard) {
       onSwipe(currentCard, 'rejected');
     }
 
@@ -77,187 +77,193 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     };
   }, [isDragging, handleTouchMove, handleTouchEnd]);
 
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentCard) return;
-      if (e.key === 'ArrowRight') {
+      if (e.key === 'ArrowRight' || e.key === 'l') {
         onSwipe(currentCard, 'liked');
-      } else if (e.key === 'ArrowLeft') {
+      } else if (e.key === 'ArrowLeft' || e.key === 'h') {
         onSwipe(currentCard, 'rejected');
-      } else if ((e.key === 'z' || e.key === 'Z') && canUndo) {
+      } else if (e.key === 'z' && (e.metaKey || e.ctrlKey) && canUndo) {
         onUndo();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentCard, canUndo, onSwipe, onUndo]);
-
-  const rotation = dragOffset.x * 0.08;
-  const isDraggingRight = dragOffset.x > 25;
-  const isDraggingLeft = dragOffset.x < -25;
+  }, [currentCard, onSwipe, canUndo, onUndo]);
 
   if (!currentCard) {
     return (
-      <div className="empty-deck-card" role="region" aria-label="Deck concluído">
-        <div className="empty-deck-icon">✨</div>
-        <h3 className="empty-deck-title">Você explorou todos os lugares!</h3>
-        <p className="empty-deck-text">
-          Você curtiu <strong>{totalLikes}</strong> atrações e locais nesta cidade.
-        </p>
-        <div className="empty-deck-actions">
-          {canUndo && (
-            <button type="button" className="action-button-undo" onClick={onUndo}>
-              ⏪ Desfazer Última
-            </button>
-          )}
-          <button
-            type="button"
-            className="action-button-primary"
-            onClick={onViewMatches}
-          >
-            Ver Meus Matches ({totalLikes}) →
-          </button>
+      <div className="swipe-deck-container">
+        <div className="empty-deck-card">
+          <div className="empty-deck-icon">✨</div>
+          <h3>Você explorou todos os locais!</h3>
+          <p>
+            {totalLikes > 0
+              ? `Você curtiu ${totalLikes} ${totalLikes === 1 ? 'local' : 'locais'} incríveis. Vamos montar o seu roteiro?`
+              : 'Nenhum local foi curtido nesta cidade. Que tal reiniciar e rever as opções?'}
+          </p>
+          <div className="matches-actions-group" style={{ justifyContent: 'center' }}>
+            {canUndo && (
+              <button
+                type="button"
+                className="action-button-secondary"
+                onClick={onUndo}
+              >
+                ↺ Desfazer Última Escolha
+              </button>
+            )}
+            {totalLikes > 0 && (
+              <button
+                type="button"
+                className="action-button-primary"
+                onClick={onViewMatches}
+              >
+                Ver {totalLikes} Matches →
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="swipe-deck-container" role="region" aria-label="Deck de Descoberta de Locais">
-      <div className="deck-progress-bar">
-        <span>Lugares restantes: {remainingPlaces.length}</span>
-        <button
-          type="button"
-          className="badge-matches-button"
-          onClick={onViewMatches}
-        >
-          ❤️ {totalLikes} {totalLikes === 1 ? 'Match' : 'Matches'}
-        </button>
-      </div>
+  // Calculate dynamic rotation and opacity based on horizontal drag
+  const rotation = dragOffset.x * 0.08;
+  const isLiking = dragOffset.x > 35;
+  const isRejecting = dragOffset.x < -35;
 
-      <div className="deck-stage">
-        {/* Next Card underneath for 3D depth */}
+  return (
+    <div className="swipe-deck-container">
+      <div className="cards-stack-area">
+        {/* Next Card underneath for depth */}
         {nextCard && (
-          <div className="swipe-card card-underneath" aria-hidden="true">
-            <img
-              src={nextCard.imageUrl}
-              alt={nextCard.name}
-              className="card-cover-media"
-              loading="lazy"
-            />
-            <div className="card-gradient-overlay" />
-            <div className="card-content">
-              <span className="card-category-pill">{nextCard.category}</span>
-              <h3 className="card-title">{nextCard.name}</h3>
+          <div className="swipe-card is-next" aria-hidden="true">
+            <div className="card-image-wrapper">
+              <img
+                src={nextCard.imageUrl}
+                alt={nextCard.name}
+                className="card-image"
+                loading="lazy"
+              />
+              <div className="card-gradient-overlay" />
+              <div className="card-content-overlay">
+                <h3 className="card-title">{nextCard.name}</h3>
+                {nextCard.address && (
+                  <p className="card-address">📍 {nextCard.address}</p>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Top Active Card with real-time drag transforms */}
+        {/* Current Active Card */}
         <div
-          className={`swipe-card card-active ${isDragging ? 'is-dragging' : ''}`}
+          className="swipe-card is-current"
           style={{
-            transform: `translate3d(${dragOffset.x}px, ${dragOffset.y * 0.4}px, 0) rotate(${rotation}deg)`,
+            transform: `translate(${dragOffset.x}px, ${dragOffset.y}px) rotate(${rotation}deg)`,
+            transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
           }}
           onMouseDown={handleTouchStart}
           onTouchStart={handleTouchStart}
-          role="article"
-          aria-label={`${currentCard.name}, ${currentCard.category}`}
+          data-testid="swipe-card"
         >
-          <img
-            src={currentCard.imageUrl}
-            alt={currentCard.name}
-            className="card-cover-media"
-            draggable={false}
-          />
-          <div className="card-gradient-overlay" />
+          <div className="card-image-wrapper">
+            <img
+              src={currentCard.imageUrl}
+              alt={currentCard.name}
+              className="card-image"
+              draggable={false}
+            />
+            <div className="card-gradient-overlay" />
 
-          {/* Swipe Action Visual Stamps via state classes */}
-          <div
-            className={`swipe-stamp stamp-like ${isDraggingRight ? 'visible' : ''}`}
-            aria-hidden="true"
-          >
-            MATCH ❤️
-          </div>
-          <div
-            className={`swipe-stamp stamp-reject ${isDraggingLeft ? 'visible' : ''}`}
-            aria-hidden="true"
-          >
-            PASSAR ❌
-          </div>
-
-          <div className="card-content">
-            <div className="card-badges-row">
-              <span className="card-category-pill">{currentCard.category}</span>
-              <span
-                className={`card-env-pill ${
-                  currentCard.environment === PoiEnvironment.OUTDOOR
-                    ? 'pill-outdoor'
-                    : currentCard.environment === PoiEnvironment.INDOOR
-                    ? 'pill-indoor'
-                    : 'pill-hybrid'
-                }`}
-              >
-                {currentCard.environment === PoiEnvironment.OUTDOOR
-                  ? '🌲 Ao Ar Livre'
-                  : currentCard.environment === PoiEnvironment.INDOOR
-                  ? '🏛️ Coberto (Indoor)'
-                  : '✨ Híbrido'}
+            {/* Top Badges */}
+            <div className="card-top-badges">
+              <span className="category-tag">{currentCard.category}</span>
+              <span className="environment-tag">
+                {currentCard.environment === 'OUTDOOR' ? '☀️ Ao Ar Livre' : '🏛️ Coberto'}
               </span>
             </div>
 
-            <h3 className="card-title">{currentCard.name}</h3>
-            <p className="card-description">{currentCard.description}</p>
-
-            {currentCard.tags && currentCard.tags.length > 0 && (
-              <div className="card-tags-row">
-                {currentCard.tags.map((tag) => (
-                  <span key={tag} className="card-tag">
-                    #{tag}
-                  </span>
-                ))}
+            {/* Stamp Feedback */}
+            {isLiking && (
+              <div className="swipe-stamp like" data-testid="stamp-like">
+                MATCH
               </div>
             )}
+            {isRejecting && (
+              <div className="swipe-stamp reject" data-testid="stamp-reject">
+                PASS
+              </div>
+            )}
+
+            {/* Bottom Content Overlay */}
+            <div className="card-content-overlay">
+              <h2 className="card-title">{currentCard.name}</h2>
+              {currentCard.address && (
+                <p className="card-address">
+                  <span>📍</span> {currentCard.address}
+                </p>
+              )}
+              <p className="card-description">{currentCard.description}</p>
+              {currentCard.tags && currentCard.tags.length > 0 && (
+                <div className="card-tags">
+                  {currentCard.tags.slice(0, 3).map((tag, idx) => (
+                    <span key={idx} className="card-tag">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Accessible Action Buttons */}
-      <div className="swipe-controls">
+      {/* Tactile Bottom Action Controls */}
+      <div className="swipe-action-controls">
         <button
           type="button"
-          className="control-btn btn-reject"
-          aria-label="Rejeitar este local"
-          title="Passar (Seta Esquerda)"
-          onClick={() => onSwipe(currentCard, 'rejected')}
-        >
-          ❌
-        </button>
-
-        <button
-          type="button"
-          className="control-btn btn-undo"
-          aria-label="Desfazer última escolha"
-          title="Desfazer (Z)"
-          disabled={!canUndo}
+          className="action-circle-btn btn-undo"
           onClick={onUndo}
+          disabled={!canUndo}
+          title="Desfazer última decisão (Ctrl+Z)"
+          aria-label="Desfazer"
         >
-          ⏪
+          ↺
         </button>
 
         <button
           type="button"
-          className="control-btn btn-like"
-          aria-label="Curtir este local"
-          title="Curtir (Seta Direita)"
-          onClick={() => onSwipe(currentCard, 'liked')}
+          className="action-circle-btn btn-reject"
+          onClick={() => onSwipe(currentCard, 'rejected')}
+          title="Não tenho interesse (Seta Esquerda)"
+          aria-label="Rejeitar"
         >
-          ❤️
+          ✕
         </button>
-      </div>
 
-      <div className="swipe-keyboard-hint">
-        <span>Dica: Use ⬅️ para passar e ➡️ para curtir</span>
+        <button
+          type="button"
+          className="action-circle-btn btn-like"
+          onClick={() => onSwipe(currentCard, 'liked')}
+          title="Dar Match e adicionar ao roteiro (Seta Direita)"
+          aria-label="Curtir"
+        >
+          ♥
+        </button>
+
+        <button
+          type="button"
+          className="btn-matches-pill"
+          onClick={onViewMatches}
+          aria-label={`Ver matches (${totalLikes})`}
+        >
+          <span>Matches</span>
+          <span className="nav-badge-count">{totalLikes}</span>
+        </button>
       </div>
     </div>
   );

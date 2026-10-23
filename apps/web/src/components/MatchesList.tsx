@@ -1,5 +1,5 @@
 import React from 'react';
-import { PointOfInterest, PoiEnvironment } from '@windrose/shared-types';
+import { PointOfInterest } from '@windrose/shared-types';
 
 interface MatchesListProps {
   city: string;
@@ -23,7 +23,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
           <h2 className="matches-title">Seus Matches em {city}</h2>
           <p className="matches-subtitle">
             {matches.length} {matches.length === 1 ? 'local selecionado' : 'locais selecionados'} para
-            seu roteiro
+            seu roteiro inteligente
           </p>
         </div>
         <div className="matches-actions-group">
@@ -41,7 +41,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 className="action-button-primary"
                 onClick={onGenerateItinerary}
               >
-                🗺️ Ver Roteiro Inteligente →
+                ✨ Gerar Roteiro Editorial →
               </button>
               <button
                 type="button"
@@ -49,7 +49,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 onClick={onClearMatches}
                 title="Limpar todos os matches desta cidade"
               >
-                Limpar Lista
+                Limpar
               </button>
             </>
           )}
@@ -57,63 +57,57 @@ export const MatchesList: React.FC<MatchesListProps> = ({
       </div>
 
       {matches.length === 0 ? (
-        <div className="empty-matches-card">
-          <div className="empty-matches-icon">💔</div>
-          <h3>Nenhum match ainda</h3>
-          <p>
-            Explore os cartões e clique no coração ❤️ ou deslize para a direita para salvar os lugares
-            que você deseja visitar!
-          </p>
+        <div className="empty-deck-card">
+          <div className="empty-deck-icon">🏖️</div>
+          <h3>Nenhum local curtido ainda</h3>
+          <p>Explore as atrações e dê match nos locais que você mais gostar para montar seu roteiro!</p>
           <button
             type="button"
             className="action-button-primary"
             onClick={onBackToSwipe}
           >
-            Começar a Explorar
+            Começar a Explorar →
           </button>
         </div>
       ) : (
         <div className="matches-grid">
-          {matches.map((place) => (
-            <div key={place.id} className="match-card">
-              <div className="match-thumbnail-wrapper">
+          {matches.map((poi) => (
+            <div key={poi.id} className="match-card">
+              <div className="match-card-image-wrapper">
                 <img
-                  src={place.imageUrl}
-                  alt={place.name}
-                  className="match-thumbnail-img"
+                  src={poi.imageUrl}
+                  alt={poi.name}
+                  className="match-card-image"
                   loading="lazy"
                 />
-                <span className="match-category-pill">{place.category}</span>
-              </div>
-              <div className="match-body">
-                <div className="match-title-row">
-                  <h4 className="match-name">{place.name}</h4>
-                  <span
-                    className={`card-env-pill ${
-                      place.environment === PoiEnvironment.OUTDOOR
-                        ? 'pill-outdoor'
-                        : place.environment === PoiEnvironment.INDOOR
-                        ? 'pill-indoor'
-                        : 'pill-hybrid'
-                    }`}
-                  >
-                    {place.environment === PoiEnvironment.OUTDOOR
-                      ? 'Ao Ar Livre'
-                      : place.environment === PoiEnvironment.INDOOR
-                      ? 'Indoor'
-                      : 'Híbrido'}
-                  </span>
+                <div className="card-top-badges">
+                  <span className="category-tag">{poi.category}</span>
                 </div>
-                <p className="match-description">{place.description}</p>
-                {place.tags && (
-                  <div className="card-tags-row">
-                    {place.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className="card-tag">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
+              </div>
+              <div className="match-card-body">
+                <h3 className="match-card-title">{poi.name}</h3>
+                {poi.address && (
+                  <p className="match-card-address">
+                    <span>📍</span> {poi.address}
+                  </p>
                 )}
+                <p className="match-card-desc">{poi.description}</p>
+                <div className="match-card-footer">
+                  <span className="environment-tag">
+                    {poi.environment === 'OUTDOOR' ? '☀️ Ao Ar Livre' : '🏛️ Coberto'}
+                  </span>
+                  {poi.website && (
+                    <a
+                      href={poi.website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="action-button-secondary"
+                      style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+                    >
+                      Site ↗
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}
