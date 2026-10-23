@@ -43,9 +43,9 @@ describe('ItineraryView Component', () => {
   it('deve renderizar os dias, horários e locais agendados', () => {
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    expect(screen.getByText(/Sua Viagem em Florianópolis/i)).toBeDefined();
+    expect(screen.getByText(/Roteiro em Florianópolis/i)).toBeDefined();
     expect(screen.getByText('Praia da Joaquina')).toBeDefined();
-    expect(screen.getByText('09:30 – 12:30')).toBeDefined();
+    expect(screen.getByText('09:30 - 12:30')).toBeDefined();
     expect(screen.getByText(/Clima ideal para praia/i)).toBeDefined();
   });
 
@@ -54,7 +54,7 @@ describe('ItineraryView Component', () => {
 
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    const calBtn = screen.getByRole('button', { name: /Baixar Calendário \(\.ics\)/i });
+    const calBtn = screen.getByRole('button', { name: /Exportar Calendário \(\.ICS\)/i });
     fireEvent.click(calBtn);
 
     expect(downloadSpy).toHaveBeenCalledTimes(1);
@@ -66,7 +66,7 @@ describe('ItineraryView Component', () => {
 
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    const printBtn = screen.getByRole('button', { name: /Imprimir \/ Salvar PDF/i });
+    const printBtn = screen.getByRole('button', { name: /Baixar PDF Editorial/i });
     fireEvent.click(printBtn);
 
     expect(printSpy).toHaveBeenCalledTimes(1);

@@ -1013,3 +1013,89 @@ h1, h2, h3, h4, h5, h6 {
     align-items: flex-start;
   }
 }
+
+
+/* ==========================================================================
+   Print-Friendly Travel Magazine Styles (@media print)
+   ========================================================================== */
+@media print {
+  body {
+    background: #ffffff !important;
+    background-image: none !important;
+    color: #000000 !important;
+    font-size: 11pt;
+  }
+
+  .app-header,
+  .nav-tabs-wrapper,
+  .weather-hero-banner,
+  .no-print,
+  .action-circle-btn,
+  .btn-matches-pill,
+  button {
+    display: none !important;
+  }
+
+  .container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .itinerary-container {
+    max-width: 100% !important;
+  }
+
+  .itinerary-magazine-cover {
+    background: #0f172a !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    margin-bottom: 2rem !important;
+    page-break-after: avoid;
+  }
+
+  .itinerary-cover-title {
+    color: #ffffff !important;
+    font-size: 24pt !important;
+  }
+
+  .itinerary-cover-subtitle {
+    color: #cbd5e1 !important;
+    font-size: 11pt !important;
+  }
+
+  .itinerary-day-card {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 1.5rem !important;
+    padding: 1.5rem !important;
+  }
+
+  .period-poi-card {
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .period-poi-thumb {
+    width: 90px !important;
+    height: 90px !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .suitability-badge {
+    border: 1px solid #94a3b8 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
