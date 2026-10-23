@@ -54,7 +54,7 @@ export function App() {
             rankingResult.coordinates.longitude,
             25
           );
-          setPlaces(deckResult.deck);
+          setPlaces(deckResult.deck || []);
         } catch (poiErr) {
           setPlacesError(
             poiErr instanceof Error
@@ -87,16 +87,19 @@ export function App() {
     }
   };
 
+  // Safe reference to liked places
+  const likedPlacesList = session.likedPois || [];
+
   // Generate itinerary automatically when visiting itinerary tab or requesting
   const generatedItinerary = useMemo(() => {
-    if (!ranking || session.likedPlaces.length === 0) return null;
+    if (!ranking || likedPlacesList.length === 0) return null;
     return ItineraryPlannerEngine.generateItinerary({
       city: activeCity,
       activity: selectedActivity,
-      likedPois: session.likedPlaces,
+      likedPois: likedPlacesList,
       dailyForecasts: ranking.dailyRanking,
     });
-  }, [ranking, session.likedPlaces, activeCity, selectedActivity]);
+  }, [ranking, likedPlacesList, activeCity, selectedActivity]);
 
   const topForecast = ranking?.dailyRanking[0];
 
@@ -151,8 +154,8 @@ export function App() {
               onClick={() => setActiveTab('matches')}
             >
               <span>❤️ Matches</span>
-              {session.likedPlaces.length > 0 && (
-                <span className="nav-badge-count">{session.likedPlaces.length}</span>
+              {likedPlacesList.length > 0 && (
+                <span className="nav-badge-count">{likedPlacesList.length}</span>
               )}
             </button>
             <button
@@ -236,7 +239,7 @@ export function App() {
                 onUndo={session.undoLastAction}
                 canUndo={session.canUndo}
                 onViewMatches={() => setActiveTab('matches')}
-                totalLikes={session.likedPlaces.length}
+                totalLikes={likedPlacesList.length}
               />
             )}
           </div>
@@ -246,7 +249,7 @@ export function App() {
         {activeTab === 'matches' && (
           <MatchesList
             city={activeCity}
-            matches={session.likedPlaces}
+            matches={likedPlacesList}
             onBackToSwipe={() => setActiveTab('swipe')}
             onClearMatches={session.clearCitySession}
             onGenerateItinerary={() => setActiveTab('itinerary')}

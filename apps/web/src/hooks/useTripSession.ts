@@ -116,14 +116,14 @@ export function useTripSession(city: string) {
   }, [city, storageKey]);
 
   const likedPois = useMemo(() => {
-    return Object.values(state.swipes)
+    return Object.values(state.swipes || {})
       .filter((record) => record.action === 'liked')
       .map((record) => record.poi);
   }, [state.swipes]);
 
   const isSwiped = useCallback(
     (poiId: string) => {
-      return Boolean(state.swipes[poiId]);
+      return Boolean(state.swipes?.[poiId]);
     },
     [state.swipes]
   );
@@ -132,11 +132,16 @@ export function useTripSession(city: string) {
     city,
     swipes: state.swipes,
     likedPois,
+    likedPlaces: likedPois, // Alias for backward compatibility
     totalLikes: likedPois.length,
     canUndo: state.history.length > 0,
     swipe,
+    likePlace: (poi: PointOfInterest) => swipe(poi, 'liked'),
+    rejectPlace: (poi: PointOfInterest) => swipe(poi, 'rejected'),
     undo,
+    undoLastAction: undo,
     clearSession,
+    clearCitySession: clearSession,
     isSwiped,
   };
 }
