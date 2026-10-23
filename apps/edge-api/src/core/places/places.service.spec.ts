@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PlacesService } from './places.service';
 import { OverpassClient } from '../../infrastructure/places/overpass.client';
+import { NominatimClient } from '../../infrastructure/places/nominatim.client';
 import { WikimediaClient } from '../../infrastructure/places/wikimedia.client';
 import { PoiCategory, PoiEnvironment } from '@windrose/shared-types';
 
@@ -10,6 +11,7 @@ describe('PlacesService Domain Logic', () => {
   });
 
   it('deve retornar POIs curados e prioritários para cidades conhecidas (ex: Florianópolis)', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
     vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([]);
 
     const deck = await PlacesService.getDeckForCity('Florianópolis', -27.59, -48.54);
@@ -22,6 +24,7 @@ describe('PlacesService Domain Logic', () => {
   });
 
   it('deve mesclar POIs do OpenStreetMap sem duplicar nomes', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
     vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([
       {
         id: 'osm-1',
@@ -59,7 +62,32 @@ describe('PlacesService Domain Logic', () => {
     expect(joaquinaMatches).toHaveLength(1);
   });
 
-  it('deve utilizar fallback genérico para cidades desconhecidas quando a Overpass falha', async () => {
+  it('deve buscar locais reais e formatar endereços via NominatimClient para qualquer cidade', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([
+      {
+        id: 'osm-nom-123',
+        name: 'Memorial Árabe',
+        category: PoiCategory.ATTRACTION,
+        environment: PoiEnvironment.OUTDOOR,
+        latitude: -25.423,
+        longitude: -49.268,
+        city: 'Curitiba',
+        description: 'Ponto turístico real.',
+        imageUrl: 'https://images.unsplash.com/photo-fallback',
+        tags: ['Ponto Turístico'],
+        address: 'Rua Barão de Antonina, Centro, Curitiba',
+      },
+    ]);
+
+    const deck = await PlacesService.getDeckForCity('Curitiba', -25.42, -49.27);
+    const memorial = deck.find((p) => p.name === 'Memorial Árabe');
+
+    expect(memorial).toBeDefined();
+    expect(memorial?.address).toBe('Rua Barão de Antonina, Centro, Curitiba');
+  });
+
+  it('deve utilizar fallback genérico para cidades desconhecidas quando as APIs externas falham', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
     vi.spyOn(OverpassClient, 'fetchNearbyPois').mockRejectedValueOnce(
       new Error('Overpass Gateway Timeout')
     );
@@ -72,6 +100,7 @@ describe('PlacesService Domain Logic', () => {
   });
 
   it('deve enriquecer POIs com imagem da Wikimedia quando disponível', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
     vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([
       {
         id: 'osm-museum',
