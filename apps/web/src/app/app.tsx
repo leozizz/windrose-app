@@ -11,6 +11,7 @@ import { SwipeDeck } from '../components/SwipeDeck';
 import { MatchesList } from '../components/MatchesList';
 import { ItineraryView } from '../components/ItineraryView';
 import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
+import { formatActivity, formatRecommendation } from '../utils/labels';
 
 type ActiveTab = 'swipe' | 'matches' | 'itinerary' | 'weather';
 
@@ -256,16 +257,16 @@ export function App() {
                 <div className="hero-location-info">
                   <h2>{ranking.locationName || activeCity}</h2>
                   <p>
-                    Viabilidade para <strong>{ranking.activity}</strong>:{' '}
+                    Viabilidade para <strong>{formatActivity(ranking.activity)}</strong>:{' '}
                     <span className={`suitability-badge ${ranking.recommendationLevel || 'GOOD'}`}>
-                      {ranking.recommendationLevel || 'GOOD'} ({ranking.overallScore ?? 75}/100)
+                      {formatRecommendation(ranking.recommendationLevel)} ({ranking.overallScore ?? 75}/100)
                     </span>
                   </p>
                 </div>
                 <div className="hero-weather-metrics">
                   <div className="metric-pill">
                     <span className="label">Classificação</span>
-                    <span className="value">{ranking.recommendationLevel || 'BOM'}</span>
+                    <span className="value">{formatRecommendation(ranking.recommendationLevel)}</span>
                   </div>
                   <div className="metric-pill">
                     <span className="label">Nota Geral</span>
@@ -363,7 +364,7 @@ export function App() {
                 {dailyScoresList.map((day) => (
                   <div key={day.date} className="match-card" style={{ padding: '1.5rem' }}>
                     <span className={`suitability-badge ${day.recommendationLevel}`} style={{ alignSelf: 'flex-start', marginBottom: '0.75rem' }}>
-                      {day.recommendationLevel} • {day.score}/100
+                      {formatRecommendation(day.recommendationLevel)} • {day.score}/100
                     </span>
                     <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
                       {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
