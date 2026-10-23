@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PointOfInterest } from '@windrose/shared-types';
+import { InteractiveMap } from './InteractiveMap';
 
 interface MatchesListProps {
   city: string;
@@ -16,6 +17,8 @@ export const MatchesList: React.FC<MatchesListProps> = ({
   onClearMatches,
   onGenerateItinerary,
 }) => {
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+
   return (
     <div className="matches-container">
       <div className="matches-header">
@@ -27,6 +30,27 @@ export const MatchesList: React.FC<MatchesListProps> = ({
           </p>
         </div>
         <div className="matches-actions-group">
+          {matches.length > 0 && (
+            <div className="nav-tabs" style={{ padding: '0.2rem', boxShadow: 'none' }}>
+              <button
+                type="button"
+                className={`nav-tab-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                onClick={() => setViewMode('grid')}
+              >
+                🖼️ Grade
+              </button>
+              <button
+                type="button"
+                className={`nav-tab-btn ${viewMode === 'map' ? 'active' : ''}`}
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                onClick={() => setViewMode('map')}
+              >
+                🗺️ Mapa
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
             className="action-button-secondary"
@@ -68,6 +92,10 @@ export const MatchesList: React.FC<MatchesListProps> = ({
           >
             Começar a Explorar →
           </button>
+        </div>
+      ) : viewMode === 'map' ? (
+        <div style={{ marginTop: '1rem' }}>
+          <InteractiveMap places={matches} height="520px" />
         </div>
       ) : (
         <div className="matches-grid">
