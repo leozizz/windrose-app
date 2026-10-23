@@ -1,6 +1,7 @@
 import React from 'react';
 import { TripItinerary } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
+import { InteractiveMap } from './InteractiveMap';
 
 interface ItineraryViewProps {
   itinerary: TripItinerary;
@@ -19,13 +20,16 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     CalendarExporter.downloadIcsFile(itinerary);
   };
 
+  // Collect all unique scheduled places for map display
+  const allScheduledPlaces = itinerary.days.flatMap((d) => d.slots.map((s) => s.place));
+
   if (!itinerary.days || itinerary.days.length === 0) {
     return (
-      <div className="empty-itinerary-card">
-        <div className="empty-itinerary-icon">🗺️</div>
-        <h3 className="empty-itinerary-title">Nenhum roteiro gerado ainda</h3>
-        <p className="empty-itinerary-text">
-          Você ainda não deu Match em nenhum lugar. Vá para a aba <strong>Explorar Lugares</strong> e
+      <div className="empty-deck-card">
+        <div className="empty-deck-icon">🗺️</div>
+        <h3>Nenhum roteiro gerado ainda</h3>
+        <p>
+          Você ainda não deu Match em nenhum lugar. Vá para a aba <strong>Descoberta</strong> e
           curta os pontos turísticos e restaurantes para gerarmos um roteiro inteligente adaptado ao clima!
         </p>
         <button
@@ -40,148 +44,152 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   }
 
   return (
-    <div className="itinerary-wrapper">
-      {/* Header and Action Toolbar */}
-      <div className="itinerary-header">
-        <div>
-          <span className="itinerary-badge">Roteiro Otimizado por Clima</span>
-          <h2 className="itinerary-title">Sua Viagem em {itinerary.city}</h2>
-          <p className="itinerary-subtitle">
-            {itinerary.totalPlacesScheduled} locais organizados em {itinerary.days.length} dias
-            conforme a previsão meteorológica.
-          </p>
-        </div>
+    <div className="itinerary-container">
+      {/* Editorial Magazine Style Cover */}
+      <section className="itinerary-magazine-cover">
+        <div className="itinerary-cover-badge">Guia de Viagem Exclusivo</div>
+        <h1 className="itinerary-cover-title">Roteiro em {itinerary.city}</h1>
+        <p className="itinerary-cover-subtitle">
+          {itinerary.totalPlacesScheduled} locais imperdíveis distribuídos estrategicamente em{' '}
+          {itinerary.days.length} dias conforme a previsão do tempo.
+        </p>
 
-        <div className="itinerary-export-bar">
-          <button
-            type="button"
-            className="export-btn btn-calendar"
-            onClick={handleDownloadIcs}
-            title="Baixar arquivo .ics para Apple Calendar, Google Calendar e Outlook"
-          >
-            📅 Baixar Calendário (.ics)
-          </button>
+        <div className="itinerary-meta-bar">
+          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
+            <div>
+              <strong>Destino:</strong> {itinerary.city}
+            </div>
+            <div>
+              <strong>Duração:</strong> {itinerary.days.length} Dias
+            </div>
+          </div>
 
-          <button
-            type="button"
-            className="export-btn btn-pdf"
-            onClick={handlePrintPdf}
-            title="Imprimir ou Salvar como PDF customizado"
-          >
-            📄 Imprimir / Salvar PDF
-          </button>
+          <div className="itinerary-actions-row no-print">
+            <button
+              type="button"
+              className="action-button-primary"
+              onClick={handlePrintPdf}
+              title="Salvar como PDF ou Imprimir"
+            >
+              📄 Baixar PDF Editorial
+            </button>
+            <button
+              type="button"
+              className="action-button-secondary"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)' }}
+              onClick={handleDownloadIcs}
+              title="Adicionar horários à sua agenda do celular"
+            >
+              📅 Exportar Calendário (.ICS)
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* Map of Itinerary Route */}
+      {allScheduledPlaces.length > 0 && (
+        <section className="itinerary-map-section no-print" style={{ marginBottom: '2.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>
+            🗺️ Mapa Geral do Roteiro
+          </h3>
+          <InteractiveMap places={allScheduledPlaces} height="380px" />
+        </section>
+      )}
 
       {/* Days Timeline */}
-      <div className="itinerary-days-timeline">
+      <div className="itinerary-timeline">
         {itinerary.days.map((day, dayIndex) => (
-          <section key={day.date} className="itinerary-day-section">
-            <div className="day-meta-header">
+          <article key={day.date} className="itinerary-day-card">
+            <div className="itinerary-day-header">
               <div className="day-title-group">
-                <span className="day-counter">Dia {dayIndex + 1}</span>
-                <h3 className="day-heading">
-                  {day.weekday}, {formatDisplayDate(day.date)}
+                <h3>
+                  Dia {dayIndex + 1} • {day.weekday}
                 </h3>
+                <p>{new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               </div>
 
-              <div className="day-weather-status">
-                <span
-                  className={`recommendation-tag ${
-                    day.weatherScore >= 80
-                      ? 'tag-excellent'
-                      : day.weatherScore >= 60
-                      ? 'tag-good'
-                      : day.weatherScore >= 40
-                      ? 'tag-fair'
-                      : 'tag-poor'
-                  }`}
-                >
-                  Clima: {day.weatherScore}/100 ({day.recommendationLevel})
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className={`suitability-badge ${day.recommendationLevel}`}>
+                  Clima: {day.recommendationLevel} ({day.weatherScore}/100)
                 </span>
                 {day.isRainyOrAdverse && (
-                  <span className="weather-alert-tag">
-                    🌧️ Otimizado para chuva/vento
+                  <span style={{ fontSize: '0.8rem', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontWeight: 600 }}>
+                    🌧️ Otimizado para Chuva
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Slots Cards */}
-            <div className="slots-grid">
+            <div className="day-period-timeline">
               {day.slots.map((slot) => {
-                const googleCalUrl = CalendarExporter.getGoogleCalendarUrl(
-                  slot,
-                  day.date,
-                  itinerary.city
-                );
+                const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  slot.place.name + ' ' + slot.place.city
+                )}`;
 
                 return (
-                  <div key={slot.place.id} className="itinerary-slot-card">
-                    <div className="slot-badge-column">
-                      <span className="slot-period-tag">{slot.slotLabel}</span>
-                      <span className="slot-time">
-                        {slot.startTime} – {slot.endTime}
+                  <div key={slot.slot} className="period-block">
+                    <div className="period-indicator">
+                      <span className="period-badge">{slot.slotLabel}</span>
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                        {slot.startTime} - {slot.endTime}
                       </span>
                     </div>
 
-                    <div className="slot-image-container">
-                      <img
-                        src={slot.place.imageUrl}
-                        alt={slot.place.name}
-                        className="slot-cover-image"
-                        loading="lazy"
-                      />
-                      <span className="slot-category-chip">{slot.place.category}</span>
-                    </div>
-
-                    <div className="slot-details">
-                      <h4 className="slot-place-name">{slot.place.name}</h4>
-                      <p className="slot-place-desc">{slot.place.description}</p>
-
-                      {slot.weatherOptimizationNote && (
-                        <div className="slot-optimization-note">
-                          <span>{slot.weatherOptimizationNote}</span>
-                        </div>
+                    <div className="period-poi-card">
+                      {slot.place.imageUrl && (
+                        <img
+                          src={slot.place.imageUrl}
+                          alt={slot.place.name}
+                          className="period-poi-thumb"
+                          loading="lazy"
+                        />
                       )}
+                      <div className="period-poi-content">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <h4 className="period-poi-title">{slot.place.name}</h4>
+                          <span className="category-tag" style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem' }}>
+                            {slot.place.category}
+                          </span>
+                        </div>
 
-                      <div className="slot-footer-actions">
-                        {slot.place.tags && (
-                          <div className="slot-tags">
-                            {slot.place.tags.slice(0, 2).map((t) => (
-                              <span key={t} className="card-tag">
-                                #{t}
-                              </span>
-                            ))}
+                        {slot.place.address && (
+                          <p className="period-poi-address">
+                            <span>📍</span> {slot.place.address}
+                          </p>
+                        )}
+
+                        <p className="period-poi-desc">{slot.place.description}</p>
+
+                        {slot.weatherOptimizationNote && (
+                          <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--primary-text)', background: 'var(--primary-subtle)', padding: '0.3rem 0.6rem', borderRadius: '6px', display: 'inline-block' }}>
+                            {slot.weatherOptimizationNote}
                           </div>
                         )}
-                        <a
-                          href={googleCalUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="btn-add-gcal"
-                          title="Adicionar este horário ao Google Calendar"
-                        >
-                          + Google Calendar
-                        </a>
+
+                        <div className="no-print" style={{ marginTop: '0.75rem' }}>
+                          <a
+                            href={googleMapsUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '0.8rem',
+                              color: 'var(--primary)',
+                              textDecoration: 'none',
+                              fontWeight: 600,
+                            }}
+                          >
+                            Abrir no Mapa ↗
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </section>
+          </article>
         ))}
       </div>
     </div>
   );
 };
-
-function formatDisplayDate(dateStr: string): string {
-  try {
-    const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('pt-BR', { month: 'short', day: 'numeric' });
-  } catch {
-    return dateStr;
-  }
-}

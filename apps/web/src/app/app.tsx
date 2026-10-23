@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ActivityType,
   ActivityRankingResult,
+  DailyScore,
   PointOfInterest,
 } from '@windrose/shared-types';
 import { apiClient } from '../services/api.client';
@@ -44,16 +45,23 @@ export function App() {
       try {
         const rankingResult = await apiClient.getRanking(city, activity);
         setRanking(rankingResult);
-        setActiveCity(rankingResult.locationName);
+
+        const locationName = rankingResult.locationName || city;
+        setActiveCity(locationName);
+
+        // Safely extract coordinates (supports flat lat/lon or nested coordinates)
+        const lat =
+          rankingResult.latitude ??
+          (rankingResult as unknown as { coordinates?: { latitude: number } }).coordinates?.latitude ??
+          -27.5954;
+        const lon =
+          rankingResult.longitude ??
+          (rankingResult as unknown as { coordinates?: { longitude: number } }).coordinates?.longitude ??
+          -48.548;
 
         // Fetch POIs using exact coordinates
         try {
-          const deckResult = await apiClient.getPlacesDeck(
-            rankingResult.locationName,
-            rankingResult.coordinates.latitude,
-            rankingResult.coordinates.longitude,
-            25
-          );
+          const deckResult = await apiClient.getPlacesDeck(locationName, lat, lon, 25);
           setPlaces(deckResult.deck || []);
         } catch (poiErr) {
           setPlacesError(
@@ -90,18 +98,27 @@ export function App() {
   // Safe reference to liked places
   const likedPlacesList = session.likedPois || [];
 
-  // Generate itinerary automatically when visiting itinerary tab or requesting
-  const generatedItinerary = useMemo(() => {
-    if (!ranking || likedPlacesList.length === 0) return null;
-    return ItineraryPlannerEngine.generateItinerary({
-      city: activeCity,
-      activity: selectedActivity,
-      likedPois: likedPlacesList,
-      dailyForecasts: ranking.dailyRanking,
-    });
-  }, [ranking, likedPlacesList, activeCity, selectedActivity]);
+  // Safe daily scores list from backend
+  const dailyScoresList: DailyScore[] = useMemo(() => {
+    if (!ranking) return [];
+    return (
+      ranking.dailyScores ||
+      (ranking as unknown as { dailyRanking?: DailyScore[] }).dailyRanking ||
+      []
+    );
+  }, [ranking]);
 
-  const topForecast = ranking?.dailyRanking[0];
+  // Generate itinerary combining liked places with weather scores
+  const generatedItinerary = useMemo(() => {
+    if (!ranking || likedPlacesList.length === 0 || dailyScoresList.length === 0) return null;
+    return ItineraryPlannerEngine.buildSmartItinerary(
+      activeCity,
+      likedPlacesList,
+      dailyScoresList
+    );
+  }, [ranking, likedPlacesList, dailyScoresList, activeCity]);
+
+  const topScore = dailyScoresList[0];
 
   return (
     <div>
@@ -176,31 +193,29 @@ export function App() {
         </div>
 
         {/* Hero Weather Banner */}
-        {ranking && topForecast && (
+        {ranking && (
           <section className="weather-hero-banner" aria-label="Resumo do Destino">
             <div className="hero-location-info">
-              <h2>{ranking.locationName}</h2>
+              <h2>{ranking.locationName || activeCity}</h2>
               <p>
                 Viabilidade para <strong>{ranking.activity}</strong>:{' '}
-                <span className={`suitability-badge ${topForecast.suitability}`}>
-                  {topForecast.suitability} ({topForecast.score}/100)
+                <span className={`suitability-badge ${ranking.recommendationLevel || 'GOOD'}`}>
+                  {ranking.recommendationLevel || 'GOOD'} ({ranking.overallScore ?? 75}/100)
                 </span>
               </p>
             </div>
             <div className="hero-weather-metrics">
               <div className="metric-pill">
-                <span className="label">Temperatura</span>
-                <span className="value">
-                  {Math.round(topForecast.metrics.tempMin)}°C ~ {Math.round(topForecast.metrics.tempMax)}°C
-                </span>
+                <span className="label">Classificação</span>
+                <span className="value">{ranking.recommendationLevel || 'BOM'}</span>
               </div>
               <div className="metric-pill">
-                <span className="label">Chuva</span>
-                <span className="value">{topForecast.metrics.precipitationProbability}%</span>
+                <span className="label">Nota Geral</span>
+                <span className="value">{ranking.overallScore ?? 75}/100</span>
               </div>
               <div className="metric-pill">
-                <span className="label">Vento</span>
-                <span className="value">{Math.round(topForecast.metrics.windSpeedMax)} km/h</span>
+                <span className="label">Dias Analisados</span>
+                <span className="value">{dailyScoresList.length} dias</span>
               </div>
             </div>
           </section>
@@ -262,7 +277,7 @@ export function App() {
             {generatedItinerary ? (
               <ItineraryView
                 itinerary={generatedItinerary}
-                onBackToMatches={() => setActiveTab('matches')}
+                onBackToSwipe={() => setActiveTab('swipe')}
               />
             ) : (
               <div className="empty-deck-card">
@@ -287,23 +302,21 @@ export function App() {
         {/* Tab 4: 7-Day Weather Forecast */}
         {activeTab === 'weather' && ranking && (
           <div className="matches-grid">
-            {ranking.dailyRanking.map((day) => (
+            {dailyScoresList.map((day) => (
               <div key={day.date} className="match-card" style={{ padding: '1.5rem' }}>
-                <span className={`suitability-badge ${day.suitability}`} style={{ alignSelf: 'flex-start', marginBottom: '0.75rem' }}>
-                  {day.suitability} • {day.score}/100
+                <span className={`suitability-badge ${day.recommendationLevel}`} style={{ alignSelf: 'flex-start', marginBottom: '0.75rem' }}>
+                  {day.recommendationLevel} • {day.score}/100
                 </span>
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-                  {new Date(day.date).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
+                  {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
                 </h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
-                  {day.verdict}
-                </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
-                  <div>🌡️ {Math.round(day.metrics.tempMin)}°C ~ {Math.round(day.metrics.tempMax)}°C</div>
-                  <div>🌧️ {day.metrics.precipitationProbability}% chuva</div>
-                  <div>💨 {Math.round(day.metrics.windSpeedMax)} km/h</div>
-                  <div>☀️ UV {day.metrics.uvIndexMax}</div>
-                </div>
+                {day.reasons && day.reasons.length > 0 && (
+                  <ul style={{ paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    {day.reasons.map((r, i) => (
+                      <li key={i}>{r}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
             ))}
           </div>
