@@ -11,7 +11,7 @@ import { MatchesList } from '../components/MatchesList';
 import { ItineraryView } from '../components/ItineraryView';
 import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
 
-type ActiveTab = 'weather' | 'swipe' | 'matches' | 'itinerary';
+type ActiveTab = 'swipe' | 'matches' | 'itinerary' | 'weather';
 
 export function App() {
   const [cityNameInput, setCityNameInput] = useState<string>('Florianópolis');
@@ -31,7 +31,7 @@ export function App() {
   const [loadingPlaces, setLoadingPlaces] = useState(false);
   const [placesError, setPlacesError] = useState<string | null>(null);
 
-  // Trip Session Hook (LocalStorage Stateless Storage)
+  // Trip Session Hook (Stateless Storage)
   const session = useTripSession(activeCity);
 
   const fetchData = useCallback(
@@ -46,22 +46,28 @@ export function App() {
         setRanking(rankingResult);
         setActiveCity(rankingResult.locationName);
 
-        // Fetch POIs using exact coordinates from ranking
+        // Fetch POIs using exact coordinates
         try {
           const deckResult = await apiClient.getPlacesDeck(
             rankingResult.locationName,
-            rankingResult.latitude,
-            rankingResult.longitude,
+            rankingResult.coordinates.latitude,
+            rankingResult.coordinates.longitude,
             25
           );
           setPlaces(deckResult.deck);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Erro ao carregar lugares.';
-          setPlacesError(msg);
+        } catch (poiErr) {
+          setPlacesError(
+            poiErr instanceof Error
+              ? poiErr.message
+              : 'Não foi possível carregar os locais de interesse.'
+          );
         }
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Não foi possível consultar o clima.';
-        setWeatherError(msg);
+        setWeatherError(
+          err instanceof Error
+            ? err.message
+            : 'Erro ao buscar dados meteorológicos da cidade.'
+        );
       } finally {
         setLoadingWeather(false);
         setLoadingPlaces(false);
@@ -71,286 +77,236 @@ export function App() {
   );
 
   useEffect(() => {
-    fetchData('Florianópolis', selectedActivity);
-  }, [fetchData, selectedActivity]);
+    fetchData(activeCity, selectedActivity);
+  }, [fetchData, activeCity, selectedActivity]);
 
-  const handleSearch = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!cityNameInput.trim()) return;
-    fetchData(cityNameInput.trim(), selectedActivity);
-  };
-
-  // Weather-Smart Itinerary derived reactively from matches + daily weather
-  const itinerary = useMemo(() => {
-    if (!ranking) {
-      return { city: activeCity, days: [], totalPlacesScheduled: 0 };
-    }
-    return ItineraryPlannerEngine.buildSmartItinerary(
-      activeCity,
-      session.likedPois,
-      ranking.dailyScores
-    );
-  }, [activeCity, session.likedPois, ranking]);
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr + 'T00:00:00');
-      return date.toLocaleDateString('pt-BR', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      });
-    } catch {
-      return dateStr;
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cityNameInput.trim()) {
+      fetchData(cityNameInput.trim(), selectedActivity);
     }
   };
+
+  // Generate itinerary automatically when visiting itinerary tab or requesting
+  const generatedItinerary = useMemo(() => {
+    if (!ranking || session.likedPlaces.length === 0) return null;
+    return ItineraryPlannerEngine.generateItinerary({
+      city: activeCity,
+      activity: selectedActivity,
+      likedPois: session.likedPlaces,
+      dailyForecasts: ranking.dailyRanking,
+    });
+  }, [ranking, session.likedPlaces, activeCity, selectedActivity]);
+
+  const topForecast = ranking?.dailyRanking[0];
 
   return (
-    <div className="container">
+    <div>
+      {/* Modern Glassmorphic App Header */}
       <header className="app-header">
-        <div className="logo-container">
-          <span className="app-badge-tag">Edge Edition • 100% Gratuito</span>
-          <h1 className="app-title">Windrose</h1>
-          <p className="app-subtitle">
-            Planejador Inteligente: Clima, Atividades & Descoberta Estilo Tinder
-          </p>
+        <div className="header-container">
+          <div className="brand-wrapper">
+            <div className="brand-compass-icon">🧭</div>
+            <div className="brand-info">
+              <h1>Windrose</h1>
+              <span className="brand-badge">Wanderlust 2.0</span>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearchSubmit} className="header-search-form">
+            <span style={{ marginRight: '0.5rem', opacity: 0.6 }}>🔍</span>
+            <input
+              type="text"
+              className="header-search-input"
+              value={cityNameInput}
+              onChange={(e) => setCityNameInput(e.target.value)}
+              placeholder="Buscar destino (ex: Florianópolis, Curitiba, Paris)..."
+            />
+            <button
+              type="submit"
+              className="header-search-btn"
+              disabled={loadingWeather}
+            >
+              {loadingWeather ? 'Buscando...' : 'Explorar'}
+            </button>
+          </form>
         </div>
       </header>
 
-      {/* Search & Configuration Bar */}
-      <section className="search-card">
-        <form onSubmit={handleSearch} className="search-form">
-          <div className="form-group flex-1">
-            <label className="form-label" htmlFor="city-input">
-              Destino
-            </label>
-            <div className="input-wrapper">
-              <input
-                id="city-input"
-                type="text"
-                className="search-input"
-                placeholder="Digite a cidade (ex: Florianópolis, Honolulu, Aspen, Lisboa)..."
-                value={cityNameInput}
-                onChange={(e) => setCityNameInput(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Perfil de Atividade</label>
-            <div className="activity-selector">
-              <button
-                type="button"
-                className={`activity-tab ${
-                  selectedActivity === ActivityType.OUTDOOR_SIGHTSEEING ? 'active' : ''
-                }`}
-                onClick={() => setSelectedActivity(ActivityType.OUTDOOR_SIGHTSEEING)}
-              >
-                🌲 Passeio ao Ar Livre
-              </button>
-              <button
-                type="button"
-                className={`activity-tab ${
-                  selectedActivity === ActivityType.SURFING ? 'active' : ''
-                }`}
-                onClick={() => setSelectedActivity(ActivityType.SURFING)}
-              >
-                🏄‍♂️ Surf & Praia
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="search-button"
-            disabled={loadingWeather || !cityNameInput.trim()}
-          >
-            {loadingWeather ? 'Analisando...' : 'Explorar'}
-          </button>
-        </form>
-      </section>
-
-      {weatherError && (
-        <div className="error-banner">
-          ⚠️ {weatherError}
+      <main className="container">
+        {/* Navigation Tabs */}
+        <div className="nav-tabs-wrapper">
+          <nav className="nav-tabs" aria-label="Abas de navegação">
+            <button
+              type="button"
+              className={`nav-tab-btn ${activeTab === 'swipe' ? 'active' : ''}`}
+              onClick={() => setActiveTab('swipe')}
+            >
+              <span>🔥 Descoberta</span>
+            </button>
+            <button
+              type="button"
+              className={`nav-tab-btn ${activeTab === 'matches' ? 'active' : ''}`}
+              onClick={() => setActiveTab('matches')}
+            >
+              <span>❤️ Matches</span>
+              {session.likedPlaces.length > 0 && (
+                <span className="nav-badge-count">{session.likedPlaces.length}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              className={`nav-tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
+              onClick={() => setActiveTab('itinerary')}
+            >
+              <span>🗺️ Roteiro Inteligente</span>
+            </button>
+            <button
+              type="button"
+              className={`nav-tab-btn ${activeTab === 'weather' ? 'active' : ''}`}
+              onClick={() => setActiveTab('weather')}
+            >
+              <span>☀️ Previsão 7 Dias</span>
+            </button>
+          </nav>
         </div>
-      )}
 
-      {/* Destination Summary & Mode Navigation Tabs */}
-      {ranking && (
-        <nav className="mode-tabs-nav" aria-label="Navegação de Modos">
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'swipe' ? 'active' : ''}`}
-            onClick={() => setActiveTab('swipe')}
-          >
-            🎴 Explorar Lugares (Swipe)
-            {places.length > 0 && <span className="tab-pill">{places.length}</span>}
-          </button>
+        {/* Hero Weather Banner */}
+        {ranking && topForecast && (
+          <section className="weather-hero-banner" aria-label="Resumo do Destino">
+            <div className="hero-location-info">
+              <h2>{ranking.locationName}</h2>
+              <p>
+                Viabilidade para <strong>{ranking.activity}</strong>:{' '}
+                <span className={`suitability-badge ${topForecast.suitability}`}>
+                  {topForecast.suitability} ({topForecast.score}/100)
+                </span>
+              </p>
+            </div>
+            <div className="hero-weather-metrics">
+              <div className="metric-pill">
+                <span className="label">Temperatura</span>
+                <span className="value">
+                  {Math.round(topForecast.metrics.tempMin)}°C ~ {Math.round(topForecast.metrics.tempMax)}°C
+                </span>
+              </div>
+              <div className="metric-pill">
+                <span className="label">Chuva</span>
+                <span className="value">{topForecast.metrics.precipitationProbability}%</span>
+              </div>
+              <div className="metric-pill">
+                <span className="label">Vento</span>
+                <span className="value">{Math.round(topForecast.metrics.windSpeedMax)} km/h</span>
+              </div>
+            </div>
+          </section>
+        )}
 
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'matches' ? 'active' : ''}`}
-            onClick={() => setActiveTab('matches')}
-          >
-            ❤️ Meus Matches
-            {session.totalLikes > 0 && (
-              <span className="tab-pill pill-match">{session.totalLikes}</span>
-            )}
-          </button>
+        {/* Errors / Loading Alerts */}
+        {weatherError && (
+          <div className="empty-deck-card" style={{ borderColor: 'rgba(225, 29, 72, 0.3)' }}>
+            <h3>⚠️ Ocorreu um erro</h3>
+            <p>{weatherError}</p>
+          </div>
+        )}
 
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
-            onClick={() => setActiveTab('itinerary')}
-          >
-            🗺️ Roteiro Inteligente
-            {itinerary.totalPlacesScheduled > 0 && (
-              <span className="tab-pill pill-itinerary">
-                {itinerary.totalPlacesScheduled}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            className={`tab-btn ${activeTab === 'weather' ? 'active' : ''}`}
-            onClick={() => setActiveTab('weather')}
-          >
-            ⛅ Previsão do Clima ({ranking.overallScore}/100)
-          </button>
-        </nav>
-      )}
-
-      {/* Main Tab Views */}
-      <main className="tab-content-area">
+        {/* Tab 1: Swipe Discovery */}
         {activeTab === 'swipe' && (
-          <div className="swipe-view-wrapper">
+          <div>
             {loadingPlaces ? (
-              <div className="loading-container">
-                <div className="spinner"></div>
-                <p>Preparando deck de atrações, bares e restaurantes...</p>
+              <div className="empty-deck-card">
+                <div className="empty-deck-icon">⏳</div>
+                <h3>Buscando atrações reais em {activeCity}...</h3>
+                <p>Consultando dados georreferenciados e previsões climáticas.</p>
               </div>
             ) : placesError ? (
-              <div className="error-banner">⚠️ {placesError}</div>
+              <div className="empty-deck-card">
+                <h3>Aviso</h3>
+                <p>{placesError}</p>
+              </div>
             ) : (
               <SwipeDeck
                 places={places}
                 isSwiped={session.isSwiped}
-                onSwipe={session.swipe}
-                onUndo={session.undo}
+                onSwipe={(poi, action) => {
+                  if (action === 'liked') session.likePlace(poi);
+                  else session.rejectPlace(poi);
+                }}
+                onUndo={session.undoLastAction}
                 canUndo={session.canUndo}
                 onViewMatches={() => setActiveTab('matches')}
-                totalLikes={session.totalLikes}
+                totalLikes={session.likedPlaces.length}
               />
             )}
           </div>
         )}
 
+        {/* Tab 2: Matches View */}
         {activeTab === 'matches' && (
           <MatchesList
             city={activeCity}
-            matches={session.likedPois}
+            matches={session.likedPlaces}
             onBackToSwipe={() => setActiveTab('swipe')}
-            onClearMatches={session.clearSession}
+            onClearMatches={session.clearCitySession}
             onGenerateItinerary={() => setActiveTab('itinerary')}
           />
         )}
 
+        {/* Tab 3: Itinerary View */}
         {activeTab === 'itinerary' && (
-          <ItineraryView
-            itinerary={itinerary}
-            onBackToSwipe={() => setActiveTab('swipe')}
-          />
+          <div>
+            {generatedItinerary ? (
+              <ItineraryView
+                itinerary={generatedItinerary}
+                onBackToMatches={() => setActiveTab('matches')}
+              />
+            ) : (
+              <div className="empty-deck-card">
+                <div className="empty-deck-icon">✨</div>
+                <h3>Dê Match nos seus pontos favoritos</h3>
+                <p>
+                  Para gerar seu roteiro de viagem otimizado para o clima de {activeCity},
+                  visite a aba <strong>Descoberta</strong> e dê match em pelo menos um local!
+                </p>
+                <button
+                  type="button"
+                  className="action-button-primary"
+                  onClick={() => setActiveTab('swipe')}
+                >
+                  Ir para Descoberta →
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
+        {/* Tab 4: 7-Day Weather Forecast */}
         {activeTab === 'weather' && ranking && (
-          <div className="weather-view-wrapper">
-            <section className="hero-result-card">
-              <div>
-                <h2 className="hero-info-title">{ranking.locationName}</h2>
-                <div className="hero-info-subtitle">
-                  <span>
-                    {ranking.activity === ActivityType.OUTDOOR_SIGHTSEEING
-                      ? 'Passeio ao Ar Livre'
-                      : 'Surf & Praia'}
-                  </span>
-                  <span>•</span>
-                  <span>
-                    Coord: {ranking.latitude.toFixed(2)}°, {ranking.longitude.toFixed(2)}°
-                  </span>
-                </div>
-              </div>
-
-              <div className="hero-score-badge">
-                <span className="score-number">{ranking.overallScore}</span>
-                <span className="score-max">/100</span>
-                <span
-                  className={`recommendation-tag ${
-                    ranking.recommendationLevel === 'EXCELLENT'
-                      ? 'tag-excellent'
-                      : ranking.recommendationLevel === 'GOOD'
-                      ? 'tag-good'
-                      : ranking.recommendationLevel === 'FAIR'
-                      ? 'tag-fair'
-                      : 'tag-poor'
-                  }`}
-                >
-                  {ranking.recommendationLevel}
+          <div className="matches-grid">
+            {ranking.dailyRanking.map((day) => (
+              <div key={day.date} className="match-card" style={{ padding: '1.5rem' }}>
+                <span className={`suitability-badge ${day.suitability}`} style={{ alignSelf: 'flex-start', marginBottom: '0.75rem' }}>
+                  {day.suitability} • {day.score}/100
                 </span>
-              </div>
-            </section>
-
-            <h3 className="section-title">Previsão e Viabilidade para os Próximos 7 Dias</h3>
-            <div className="days-grid">
-              {ranking.dailyScores.map((day) => (
-                <div key={day.date} className="day-card">
-                  <div className="day-header">
-                    <span className="day-date">{formatDate(day.date)}</span>
-                    <span
-                      className={`day-score-pill ${
-                        day.score >= 80
-                          ? 'pill-excellent'
-                          : day.score >= 60
-                          ? 'pill-good'
-                          : day.score >= 40
-                          ? 'pill-fair'
-                          : 'pill-poor'
-                      }`}
-                    >
-                      {day.score} pts
-                    </span>
-                  </div>
-
-                  <ul className="reasons-list">
-                    {day.reasons.map((reason, idx) => (
-                      <li key={idx} className="reason-item">
-                        {reason}
-                      </li>
-                    ))}
-                  </ul>
+                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                  {new Date(day.date).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
+                </h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                  {day.verdict}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', fontSize: '0.85rem' }}>
+                  <div>🌡️ {Math.round(day.metrics.tempMin)}°C ~ {Math.round(day.metrics.tempMax)}°C</div>
+                  <div>🌧️ {day.metrics.precipitationProbability}% chuva</div>
+                  <div>💨 {Math.round(day.metrics.windSpeedMax)} km/h</div>
+                  <div>☀️ UV {day.metrics.uvIndexMax}</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         )}
       </main>
-
-      <footer className="app-footer">
-        <p>
-          Windrose App • Dados meteorológicos fornecidos por{' '}
-          <a href="https://open-meteo.com" target="_blank" rel="noreferrer">
-            Open-Meteo
-          </a>{' '}
-          & POIs por{' '}
-          <a href="https://www.openstreetmap.org" target="_blank" rel="noreferrer">
-            OpenStreetMap
-          </a>{' '}
-          / Wikimedia.
-        </p>
-      </footer>
     </div>
   );
 }
-
 export default App;
