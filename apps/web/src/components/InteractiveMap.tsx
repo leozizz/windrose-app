@@ -112,7 +112,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       ? [places[0].latitude, places[0].longitude]
       : center
       ? [center.lat, center.lon]
-      : [-27.5954, -48.548]; // Florianópolis fallback
+      : [0, 0];
 
   return (
     <div
@@ -128,14 +128,14 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     >
       <MapContainer
         center={defaultCenter}
-        zoom={zoom}
+        zoom={places.length > 0 ? zoom : 2}
         scrollWheelZoom={false}
         style={{ width: '100%', height: '100%' }}
       >
-        {/* CartoDB Positron Tiles (High contrast, modern editorial travel aesthetic) */}
+        {/* OpenStreetMap Standard Tiles (100% Free, Open and requires NO API Key) */}
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
         <FitBoundsToMarkers places={places} />
@@ -144,7 +144,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
           if (!place.latitude || !place.longitude) return null;
 
           const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            place.name + ' ' + place.city
+            place.name + ' ' + (place.city || '')
           )}`;
 
           return (

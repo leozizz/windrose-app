@@ -2,6 +2,7 @@ import React from 'react';
 import { TripItinerary } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
 import { InteractiveMap } from './InteractiveMap';
+import { formatCategory, formatRecommendation } from '../utils/labels';
 
 interface ItineraryViewProps {
   itinerary: TripItinerary;
@@ -110,7 +111,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span className={`suitability-badge ${day.recommendationLevel}`}>
-                  Clima: {day.recommendationLevel} ({day.weatherScore}/100)
+                  Clima: {formatRecommendation(day.recommendationLevel)} ({day.weatherScore}/100)
                 </span>
                 {day.isRainyOrAdverse && (
                   <span style={{ fontSize: '0.8rem', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontWeight: 600 }}>
@@ -148,7 +149,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                           <h4 className="period-poi-title">{slot.place.name}</h4>
                           <span className="category-tag" style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem' }}>
-                            {slot.place.category}
+                            {formatCategory(slot.place.category)}
                           </span>
                         </div>
 

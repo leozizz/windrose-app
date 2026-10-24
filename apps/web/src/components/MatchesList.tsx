@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PointOfInterest } from '@windrose/shared-types';
 import { InteractiveMap } from './InteractiveMap';
+import { formatCategory } from '../utils/labels';
 
 interface MatchesListProps {
   city: string;
@@ -109,7 +110,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                   loading="lazy"
                 />
                 <div className="card-top-badges">
-                  <span className="category-tag">{poi.category}</span>
+                  <span className="category-tag">{formatCategory(poi.category)}</span>
                 </div>
               </div>
               <div className="match-card-body">

@@ -77,7 +77,7 @@ export class OverpassClient {
 
   private static mapElementToPoi(element: OverpassElement, city: string): PointOfInterest {
     const tags = element.tags || {};
-    const name = tags.name || 'Local de Interesse';
+    const name = tags.name || 'Ponto de Interesse';
 
     let category = PoiCategory.ATTRACTION;
     let environment = PoiEnvironment.OUTDOOR;
@@ -101,11 +101,13 @@ export class OverpassClient {
 
     const tagList: string[] = [];
     if (tags.cuisine) tagList.push(tags.cuisine);
-    if (tags.tourism) tagList.push(tags.tourism);
     if (tags.sport) tagList.push(tags.sport);
-    if (tagList.length === 0) tagList.push(category);
+    if (tagList.length === 0) {
+      tagList.push(this.getFriendlyCategoryName(category));
+    }
 
     const imageUrl = this.getDefaultCategoryPhoto(category);
+    const friendlyCategoryName = this.getFriendlyCategoryName(category);
 
     return {
       id: `osm-${element.id}`,
@@ -115,12 +117,31 @@ export class OverpassClient {
       latitude: element.lat,
       longitude: element.lon,
       city,
-      description: tags.description || `${category} situado em ${city}.`,
+      description: tags.description || `${friendlyCategoryName} situado em ${city}.`,
       imageUrl,
       tags: tagList,
       website: tags.website || tags['contact:website'],
       address: tags['addr:street'] ? `${tags['addr:street']}, ${tags['addr:housenumber'] || ''}` : undefined,
     };
+  }
+
+  private static getFriendlyCategoryName(category: PoiCategory): string {
+    switch (category) {
+      case PoiCategory.BEACH:
+        return 'Praia';
+      case PoiCategory.PARK:
+        return 'Parque Natural';
+      case PoiCategory.MUSEUM:
+        return 'Museu';
+      case PoiCategory.RESTAURANT:
+        return 'Restaurante';
+      case PoiCategory.BAR:
+        return 'Bar';
+      case PoiCategory.CULTURE:
+        return 'Espaço Cultural';
+      default:
+        return 'Ponto Turístico';
+    }
   }
 
   private static getDefaultCategoryPhoto(category: PoiCategory): string {
