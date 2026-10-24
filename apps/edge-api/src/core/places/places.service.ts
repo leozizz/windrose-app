@@ -66,8 +66,23 @@ export class PlacesService {
     // 5. Enrich top attractions with Wikimedia if image is generic Unsplash
     const enriched = await Promise.all(
       combined.slice(0, limit).map(async (poi) => {
+        // Sanitize any residual UPPERCASE category in tags
+        const cleanTags = (poi.tags || []).map((t) => {
+          if (t === 'ATTRACTION') return 'Ponto Turístico';
+          if (t === 'BEACH') return 'Praia';
+          if (t === 'PARK') return 'Parque';
+          if (t === 'MUSEUM') return 'Museu';
+          if (t === 'RESTAURANT') return 'Restaurante';
+          if (t === 'BAR') return 'Bar';
+          if (t === 'CULTURE') return 'Cultura';
+          return t;
+        });
+
         if (poi.imageUrl && !poi.imageUrl.includes('unsplash.com')) {
-          return poi;
+          return {
+            ...poi,
+            tags: cleanTags,
+          };
         }
 
         const wiki = await WikimediaClient.enrichPlace(poi.name);
@@ -75,6 +90,7 @@ export class PlacesService {
           ...poi,
           description: wiki.summary || poi.description,
           imageUrl: wiki.imageUrl || poi.imageUrl,
+          tags: cleanTags,
         };
       })
     );

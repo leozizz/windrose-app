@@ -36,7 +36,7 @@ describe('PlacesService Domain Logic', () => {
         city: 'Florianópolis',
         description: 'Descrição OSM',
         imageUrl: 'https://example.com/joaquina.jpg',
-        tags: ['Beach'],
+        tags: ['Praia'],
       },
       {
         id: 'osm-2',
@@ -48,7 +48,7 @@ describe('PlacesService Domain Logic', () => {
         city: 'Florianópolis',
         description: 'Mirante com vista incrível',
         imageUrl: 'https://example.com/mirante.jpg',
-        tags: ['Viewpoint'],
+        tags: ['Ponto de Vista'],
       },
     ]);
 
@@ -78,6 +78,11 @@ describe('PlacesService Domain Logic', () => {
         address: 'Rua Barão de Antonina, Centro, Curitiba',
       },
     ]);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([]);
+    vi.spyOn(WikimediaClient, 'enrichPlace').mockResolvedValueOnce({
+      summary: 'Resumo sobre o Memorial Árabe.',
+      imageUrl: 'https://images.unsplash.com/photo-fallback',
+    });
 
     const deck = await PlacesService.getDeckForCity('Curitiba', -25.42, -49.27);
     const memorial = deck.find((p) => p.name === 'Memorial Árabe');
@@ -112,7 +117,7 @@ describe('PlacesService Domain Logic', () => {
         city: 'Rio de Janeiro',
         description: 'Museu de artes',
         imageUrl: 'https://images.unsplash.com/photo-fallback',
-        tags: ['Museum'],
+        tags: ['Museu'],
       },
     ]);
 
