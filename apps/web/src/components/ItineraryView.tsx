@@ -1,5 +1,5 @@
-import React from 'react';
-import { TripItinerary } from '@windrose/shared-types';
+import React, { useState } from 'react';
+import { TripItinerary, PoiSlot } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
 import { InteractiveMap } from './InteractiveMap';
 import { formatCategory, formatRecommendation } from '../utils/labels';
@@ -13,6 +13,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   itinerary,
   onBackToSwipe,
 }) => {
+  const [qrError, setQrError] = useState(false);
+
   const handlePrintPdf = () => {
     window.print();
   };
@@ -44,42 +46,79 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     );
   }
 
+  const getSlotIcon = (slotType: string): string => {
+    switch (slotType.toUpperCase()) {
+      case 'MORNING':
+        return '🌅';
+      case 'AFTERNOON':
+        return '☀️';
+      case 'EVENING':
+      case 'NIGHT':
+        return '🌙';
+      default:
+        return '📍';
+    }
+  };
+
+  const firstDate = itinerary.days[0]?.date;
+  const lastDate = itinerary.days[itinerary.days.length - 1]?.date;
+  const formattedDateRange = firstDate && lastDate
+    ? firstDate === lastDate
+      ? new Date(firstDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+      : `${new Date(firstDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })} — ${new Date(lastDate + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'short', year: 'numeric' })}`
+    : '';
+
+  const mapsQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Roteiro ' + itinerary.city)}`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=${encodeURIComponent(mapsQueryUrl)}`;
+
   return (
     <div className="itinerary-container">
       {/* Editorial Magazine Style Cover */}
       <section className="itinerary-magazine-cover">
-        <div className="itinerary-cover-badge">Guia de Viagem Exclusivo</div>
+        <div className="itinerary-cover-top">
+          <span className="itinerary-cover-badge">Windrose Wanderlust • Guia Editorial</span>
+          <span className="itinerary-cover-edition">Edição Especial de Viagem</span>
+        </div>
+
         <h1 className="itinerary-cover-title">Roteiro em {itinerary.city}</h1>
+
         <p className="itinerary-cover-subtitle">
           {itinerary.totalPlacesScheduled} locais imperdíveis distribuídos estrategicamente em{' '}
-          {itinerary.days.length} dias conforme a previsão do tempo.
+          {itinerary.days.length} {itinerary.days.length === 1 ? 'dia' : 'dias'}, combinados harmoniosamente com as previsões climáticas em tempo real.
         </p>
 
         <div className="itinerary-meta-bar">
-          <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.9rem' }}>
-            <div>
-              <strong>Destino:</strong> {itinerary.city}
+          <div className="itinerary-meta-details">
+            <div className="meta-pill">
+              <span className="meta-label">Destino</span>
+              <strong className="meta-value">{itinerary.city}</strong>
             </div>
-            <div>
-              <strong>Duração:</strong> {itinerary.days.length} Dias
+            <div className="meta-pill">
+              <span className="meta-label">Duração</span>
+              <strong className="meta-value">{itinerary.days.length} {itinerary.days.length === 1 ? 'Dia' : 'Dias'}</strong>
             </div>
+            {formattedDateRange && (
+              <div className="meta-pill">
+                <span className="meta-label">Período</span>
+                <strong className="meta-value">{formattedDateRange}</strong>
+              </div>
+            )}
           </div>
 
           <div className="itinerary-actions-row no-print">
             <button
               type="button"
-              className="action-button-primary"
+              className="action-button-primary btn-print"
               onClick={handlePrintPdf}
-              title="Salvar como PDF ou Imprimir"
+              title="Salvar como PDF ou Imprimir este guia editorial"
             >
               📄 Baixar PDF Editorial
             </button>
             <button
               type="button"
-              className="action-button-secondary"
-              style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff', borderColor: 'rgba(255,255,255,0.3)' }}
+              className="action-button-secondary btn-calendar"
               onClick={handleDownloadIcs}
-              title="Adicionar horários à sua agenda do celular"
+              title="Adicionar horários e paradas à sua agenda do celular"
             >
               📅 Exportar Calendário (.ICS)
             </button>
@@ -87,12 +126,50 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
         </div>
       </section>
 
-      {/* Map of Itinerary Route */}
+      {/* QR Code Companion Card (Both Screen & Print Friendly) */}
+      <section className="itinerary-companion-card">
+        <div className="companion-qr-wrapper">
+          {!qrError ? (
+            <img
+              src={qrCodeUrl}
+              alt={`QR Code para roteiro em ${itinerary.city}`}
+              className="companion-qr-image"
+              onError={() => setQrError(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="companion-qr-fallback">📱</div>
+          )}
+        </div>
+        <div className="companion-text-content">
+          <span className="companion-tag">Navegação Móvel Instantânea</span>
+          <h3 className="companion-title">Leve seu guia de viagem no bolso</h3>
+          <p className="companion-desc">
+            Aponte a câmera do seu smartphone para o QR Code acima para abrir as localizações do roteiro de {itinerary.city} diretamente no Google Maps.
+          </p>
+          <a
+            href={mapsQueryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="companion-link no-print"
+          >
+            Abrir Destino no Google Maps ↗
+          </a>
+        </div>
+      </section>
+
+      {/* Map of Itinerary Route (Interactive on Web, hidden on Print) */}
       {allScheduledPlaces.length > 0 && (
-        <section className="itinerary-map-section no-print" style={{ marginBottom: '2.5rem' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>
-            🗺️ Mapa Geral do Roteiro
-          </h3>
+        <section className="itinerary-map-section no-print">
+          <div className="section-header-flex">
+            <div>
+              <h3 className="itinerary-section-heading">🗺️ Mapa Geral do Roteiro</h3>
+              <p className="itinerary-section-subheading">
+                Visualize a distribuição geográfica de todas as suas paradas programadas.
+              </p>
+            </div>
+            <span className="places-count-pill">{allScheduledPlaces.length} Paradas</span>
+          </div>
           <InteractiveMap places={allScheduledPlaces} height="380px" />
         </section>
       )}
@@ -101,85 +178,101 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       <div className="itinerary-timeline">
         {itinerary.days.map((day, dayIndex) => (
           <article key={day.date} className="itinerary-day-card">
-            <div className="itinerary-day-header">
+            <header className="itinerary-day-header">
               <div className="day-title-group">
-                <h3>
-                  Dia {dayIndex + 1} • {day.weekday}
+                <span className="day-number-label">DIA {dayIndex + 1}</span>
+                <h3 className="day-name-heading">
+                  {day.weekday}
                 </h3>
-                <p>{new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                <p className="day-date-subheading">
+                  {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </p>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="day-weather-badges">
                 <span className={`suitability-badge ${day.recommendationLevel}`}>
                   Clima: {formatRecommendation(day.recommendationLevel)} ({day.weatherScore}/100)
                 </span>
-                {day.isRainyOrAdverse && (
-                  <span style={{ fontSize: '0.8rem', background: '#fee2e2', color: '#b91c1c', padding: '0.2rem 0.6rem', borderRadius: '9999px', fontWeight: 600 }}>
+                {day.isRainyOrAdverse ? (
+                  <span className="adverse-weather-badge">
                     🌧️ Otimizado para Chuva
+                  </span>
+                ) : (
+                  <span className="ideal-weather-badge">
+                    ✨ Atividades ao Ar Livre
                   </span>
                 )}
               </div>
-            </div>
+            </header>
 
             <div className="day-period-timeline">
-              {day.slots.map((slot) => {
+              {day.slots.map((slot: PoiSlot) => {
                 const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                  slot.place.name + ' ' + slot.place.city
+                  slot.place.name + ' ' + (slot.place.address || slot.place.city)
                 )}`;
 
                 return (
                   <div key={slot.slot} className="period-block">
                     <div className="period-indicator">
+                      <div className="period-icon-circle">
+                        {getSlotIcon(slot.slot)}
+                      </div>
                       <span className="period-badge">{slot.slotLabel}</span>
-                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                      <span className="period-time-range">
                         {slot.startTime} - {slot.endTime}
                       </span>
                     </div>
 
                     <div className="period-poi-card">
-                      {slot.place.imageUrl && (
+                      {slot.place.imageUrl ? (
                         <img
                           src={slot.place.imageUrl}
                           alt={slot.place.name}
                           className="period-poi-thumb"
                           loading="lazy"
                         />
+                      ) : (
+                        <div className="period-poi-thumb-placeholder">
+                          {getSlotIcon(slot.slot)}
+                        </div>
                       )}
+
                       <div className="period-poi-content">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div className="period-poi-header">
                           <h4 className="period-poi-title">{slot.place.name}</h4>
-                          <span className="category-tag" style={{ fontSize: '0.68rem', padding: '0.2rem 0.5rem' }}>
+                          <span className="category-tag">
                             {formatCategory(slot.place.category)}
                           </span>
                         </div>
 
                         {slot.place.address && (
                           <p className="period-poi-address">
-                            <span>📍</span> {slot.place.address}
+                            <span className="address-pin-icon">📍</span>
+                            <span>{slot.place.address}</span>
                           </p>
                         )}
 
                         <p className="period-poi-desc">{slot.place.description}</p>
 
                         {slot.weatherOptimizationNote && (
-                          <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--primary-text)', background: 'var(--primary-subtle)', padding: '0.3rem 0.6rem', borderRadius: '6px', display: 'inline-block' }}>
-                            {slot.weatherOptimizationNote}
+                          <div className="period-poi-weather-note">
+                            <span className="note-icon">💡</span>
+                            <span>{slot.weatherOptimizationNote}</span>
                           </div>
                         )}
 
-                        <div className="no-print" style={{ marginTop: '0.75rem' }}>
+                        <div className="period-poi-actions no-print">
                           <a
                             href={googleMapsUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{
-                              fontSize: '0.8rem',
-                              color: 'var(--primary)',
-                              textDecoration: 'none',
-                              fontWeight: 600,
-                            }}
+                            className="btn-open-maps"
                           >
-                            Abrir no Mapa ↗
+                            Abrir no Google Maps ↗
                           </a>
                         </div>
                       </div>
@@ -191,6 +284,20 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           </article>
         ))}
       </div>
+
+      {/* Editorial Travel Guide Footer */}
+      <footer className="itinerary-editorial-footer">
+        <div className="footer-tip-box">
+          <span className="tip-box-icon">💡</span>
+          <p>
+            <strong>Dica do Guia Windrose:</strong> As condições meteorológicas e horários de visitação podem variar.
+            Confira a abertura dos atrativos antes do embarque e aproveite sua estadia em {itinerary.city}!
+          </p>
+        </div>
+        <div className="footer-brand-signature">
+          <span>Windrose Wanderlust App • Roteiros Inteligentes e Meteorologia</span>
+        </div>
+      </footer>
     </div>
   );
 };
