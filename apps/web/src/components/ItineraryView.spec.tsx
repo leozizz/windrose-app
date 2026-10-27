@@ -33,6 +33,7 @@ describe('ItineraryView Component', () => {
               description: 'Dunas e surf',
               imageUrl: 'https://example.com/beach.jpg',
               tags: ['Praia'],
+              address: 'Avenida das Rendeiras, Lagoa da Conceição',
             },
           },
         ],
@@ -47,6 +48,25 @@ describe('ItineraryView Component', () => {
     expect(screen.getByText('Praia da Joaquina')).toBeDefined();
     expect(screen.getByText('09:30 - 12:30')).toBeDefined();
     expect(screen.getByText(/Clima ideal para praia/i)).toBeDefined();
+    expect(screen.getByText(/Avenida das Rendeiras, Lagoa da Conceição/i)).toBeDefined();
+  });
+
+  it('deve renderizar a capa editorial e o card de QR Code para acesso no celular', () => {
+    render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+    expect(screen.getByText(/Windrose Wanderlust • Guia Editorial/i)).toBeDefined();
+    expect(screen.getByText(/Leve seu guia de viagem no bolso/i)).toBeDefined();
+    const qrImg = screen.getByRole('img', { name: /QR Code para roteiro em Florianópolis/i });
+    expect(qrImg).toBeDefined();
+  });
+
+  it('deve exibir fallback amigável caso o QR code falhe ao carregar', () => {
+    render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+    const qrImg = screen.getByRole('img', { name: /QR Code para roteiro em Florianópolis/i });
+    fireEvent.error(qrImg);
+
+    expect(screen.getByText('📱')).toBeDefined();
   });
 
   it('deve invocar o download do arquivo .ics ao clicar no botão de calendário', () => {
