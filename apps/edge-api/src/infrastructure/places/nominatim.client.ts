@@ -145,6 +145,8 @@ export class NominatimClient {
 
     const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : undefined;
 
+    const friendlyCategoryName = this.getFriendlyCategoryName(category);
+
     return {
       id: `osm-nom-${item.osm_id || item.place_id}`,
       name,
@@ -153,11 +155,30 @@ export class NominatimClient {
       latitude: parseFloat(item.lat),
       longitude: parseFloat(item.lon),
       city,
-      description: `${category} real localizado em ${city}.`,
+      description: `${friendlyCategoryName} situado em ${city}.`,
       imageUrl: this.getDefaultCategoryPhoto(category),
-      tags: [category, 'Ponto Turístico'],
+      tags: [friendlyCategoryName, 'Ponto de Interesse'],
       address: formattedAddress,
     };
+  }
+
+  private static getFriendlyCategoryName(category: PoiCategory): string {
+    switch (category) {
+      case PoiCategory.BEACH:
+        return 'Praia';
+      case PoiCategory.PARK:
+        return 'Parque Natural';
+      case PoiCategory.MUSEUM:
+        return 'Museu';
+      case PoiCategory.RESTAURANT:
+        return 'Restaurante';
+      case PoiCategory.BAR:
+        return 'Bar';
+      case PoiCategory.CULTURE:
+        return 'Espaço Cultural';
+      default:
+        return 'Ponto Turístico';
+    }
   }
 
   private static getDefaultCategoryPhoto(category: PoiCategory): string {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { PointOfInterest } from '@windrose/shared-types';
+import { formatCategory } from '../utils/labels';
 
 interface SwipeDeckProps {
   places: PointOfInterest[];
@@ -181,7 +182,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
             {/* Top Badges */}
             <div className="card-top-badges">
-              <span className="category-tag">{currentCard.category}</span>
+              <span className="category-tag">{formatCategory(currentCard.category)}</span>
               <span className="environment-tag">
                 {currentCard.environment === 'OUTDOOR' ? '☀️ Ao Ar Livre' : '🏛️ Coberto'}
               </span>
@@ -190,12 +191,12 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             {/* Stamp Feedback */}
             {isLiking && (
               <div className="swipe-stamp like" data-testid="stamp-like">
-                MATCH
+                CURTIR
               </div>
             )}
             {isRejecting && (
               <div className="swipe-stamp reject" data-testid="stamp-reject">
-                PASS
+                PASSAR
               </div>
             )}
 
@@ -249,7 +250,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           type="button"
           className="action-circle-btn btn-like"
           onClick={() => onSwipe(currentCard, 'liked')}
-          title="Dar Match e adicionar ao roteiro (Seta Direita)"
+          title="Curtir e adicionar ao roteiro (Seta Direita)"
           aria-label="Curtir"
         >
           ♥

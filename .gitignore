@@ -180,3 +180,5 @@ vite.config.ts.timestamp-*
 .nx/migrate-runs
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
+
+.wrangler/
