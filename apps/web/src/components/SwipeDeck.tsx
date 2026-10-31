@@ -205,7 +205,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const isLiking = (isDragging && dragOffset.x > 25) || flyOut?.direction === 'liked';
   const isRejecting = (isDragging && dragOffset.x < -25) || flyOut?.direction === 'rejected';
 
-  // Smooth stamp opacity: 1 during flyOut, proportional during drag
+  // Stamp opacity: 1 during flyOut, proportional during drag
   const stampOpacity = flyOut
     ? 1
     : isDragging
@@ -227,7 +227,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     currentCardTransition = `transform ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1), opacity ${animationDuration}ms cubic-bezier(0.16, 1, 0.3, 1)`;
   }
 
-  // 2. Next Card underneath (smooth elevation to top without stamps)
+  // 2. Next Card underneath (smooth elevation to top, full content pre-rendered)
   let nextCardScale = 0.95;
   let nextCardTranslateY = 14;
   let nextCardOpacity = 0.8;
@@ -245,7 +245,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     nextCardTransition = 'none';
   }
 
-  // 3. Third Card in background
+  // 3. Third Card in background (full content pre-rendered)
   let thirdCardScale = 0.9;
   let thirdCardTranslateY = 28;
   let thirdCardOpacity = 0.55;
@@ -263,10 +263,63 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     thirdCardTransition = 'none';
   }
 
+  // Render unified card content across all layers to prevent content pop-in
+  const renderCardContent = (poi: PointOfInterest, isCurrent: boolean) => (
+    <div className="card-image-wrapper">
+      <img
+        src={poi.imageUrl}
+        alt={poi.name}
+        className="card-image"
+        draggable={false}
+        loading={isCurrent ? 'eager' : 'lazy'}
+      />
+      <div className="card-gradient-overlay" />
+
+      {/* Top Badges */}
+      <div className="card-top-badges">
+        <span className="category-tag">{formatCategory(poi.category)}</span>
+        <span className="environment-tag">
+          {poi.environment === 'OUTDOOR' ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Sun size={12} />
+              <span>Ao Ar Livre</span>
+            </span>
+          ) : (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <Landmark size={12} />
+              <span>Coberto</span>
+            </span>
+          )}
+        </span>
+      </div>
+
+      {/* Bottom Content Overlay with full details */}
+      <div className="card-content-overlay">
+        <h2 className="card-title">{poi.name}</h2>
+        {poi.address && (
+          <p className="card-address">
+            <MapPin size={14} style={{ flexShrink: 0, opacity: 0.9 }} />
+            <span>{poi.address}</span>
+          </p>
+        )}
+        <p className="card-description">{poi.description}</p>
+        {poi.tags && poi.tags.length > 0 && (
+          <div className="card-tags">
+            {poi.tags.slice(0, 3).map((tag, idx) => (
+              <span key={idx} className="card-tag">
+                #{tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="swipe-deck-container">
       <div className="cards-stack-area">
-        {/* 1. Third Card in the Background */}
+        {/* 1. Third Card in the Background (Fully populated details) */}
         {thirdCard && (
           <div
             key={thirdCard.id}
@@ -278,19 +331,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               transition: thirdCardTransition,
             }}
           >
-            <div className="card-image-wrapper">
-              <img
-                src={thirdCard.imageUrl}
-                alt={thirdCard.name}
-                className="card-image"
-                loading="lazy"
-              />
-              <div className="card-gradient-overlay" />
-            </div>
+            {renderCardContent(thirdCard, false)}
           </div>
         )}
 
-        {/* 2. Next Card Underneath (Elevates smoothly to top, never receives stamps) */}
+        {/* 2. Next Card Underneath (Fully populated details, elevating seamlessly without pop-in) */}
         {nextCard && (
           <div
             key={nextCard.id}
@@ -302,28 +347,11 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               transition: nextCardTransition,
             }}
           >
-            <div className="card-image-wrapper">
-              <img
-                src={nextCard.imageUrl}
-                alt={nextCard.name}
-                className="card-image"
-                loading="lazy"
-              />
-              <div className="card-gradient-overlay" />
-              <div className="card-content-overlay">
-                <h3 className="card-title">{nextCard.name}</h3>
-                {nextCard.address && (
-                  <p className="card-address">
-                    <MapPin size={13} style={{ flexShrink: 0, opacity: 0.85 }} />
-                    <span>{nextCard.address}</span>
-                  </p>
-                )}
-              </div>
-            </div>
+            {renderCardContent(nextCard, false)}
           </div>
         )}
 
-        {/* 3. Current Active Card (The single card that moves, fades, and holds the decision stamp) */}
+        {/* 3. Current Active Card (Interactive, holding the decision stamp exclusively) */}
         {currentCard && (
           <div
             key={currentCard.id}
@@ -338,80 +366,33 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             onTouchStart={handleTouchStart}
             data-testid="swipe-card"
           >
-            <div className="card-image-wrapper">
-              <img
-                src={currentCard.imageUrl}
-                alt={currentCard.name}
-                className="card-image"
-                draggable={false}
-              />
-              <div className="card-gradient-overlay" />
+            {renderCardContent(currentCard, true)}
 
-              {/* Top Badges */}
-              <div className="card-top-badges">
-                <span className="category-tag">{formatCategory(currentCard.category)}</span>
-                <span className="environment-tag">
-                  {currentCard.environment === 'OUTDOOR' ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Sun size={12} />
-                      <span>Ao Ar Livre</span>
-                    </span>
-                  ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                      <Landmark size={12} />
-                      <span>Coberto</span>
-                    </span>
-                  )}
-                </span>
+            {/* Decision Stamp exclusively attached to the active swiped card */}
+            {isLiking && (
+              <div
+                className="swipe-stamp like"
+                data-testid="stamp-like"
+                style={{
+                  opacity: stampOpacity,
+                  transform: `rotate(15deg) scale(${0.85 + stampOpacity * 0.15})`,
+                }}
+              >
+                CURTIR
               </div>
-
-              {/* Decision Stamp exclusively attached to the active swiped card */}
-              {isLiking && (
-                <div
-                  className="swipe-stamp like"
-                  data-testid="stamp-like"
-                  style={{
-                    opacity: stampOpacity,
-                    transform: `rotate(15deg) scale(${0.85 + stampOpacity * 0.15})`,
-                  }}
-                >
-                  CURTIR
-                </div>
-              )}
-              {isRejecting && (
-                <div
-                  className="swipe-stamp reject"
-                  data-testid="stamp-reject"
-                  style={{
-                    opacity: stampOpacity,
-                    transform: `rotate(-15deg) scale(${0.85 + stampOpacity * 0.15})`,
-                  }}
-                >
-                  PASSAR
-                </div>
-              )}
-
-              {/* Bottom Content Overlay */}
-              <div className="card-content-overlay">
-                <h2 className="card-title">{currentCard.name}</h2>
-                {currentCard.address && (
-                  <p className="card-address">
-                    <MapPin size={14} style={{ flexShrink: 0, opacity: 0.9 }} />
-                    <span>{currentCard.address}</span>
-                  </p>
-                )}
-                <p className="card-description">{currentCard.description}</p>
-                {currentCard.tags && currentCard.tags.length > 0 && (
-                  <div className="card-tags">
-                    {currentCard.tags.slice(0, 3).map((tag, idx) => (
-                      <span key={idx} className="card-tag">
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+            )}
+            {isRejecting && (
+              <div
+                className="swipe-stamp reject"
+                data-testid="stamp-reject"
+                style={{
+                  opacity: stampOpacity,
+                  transform: `rotate(-15deg) scale(${0.85 + stampOpacity * 0.15})`,
+                }}
+              >
+                PASSAR
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
