@@ -18,6 +18,14 @@ interface SwipeDeckProps {
   animationDuration?: number;
 }
 
+interface ExitingCardState {
+  poi: PointOfInterest;
+  action: 'liked' | 'rejected';
+  startX: number;
+  startY: number;
+  startRot: number;
+}
+
 export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   places,
   isSwiped,
@@ -31,14 +39,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   const remainingPlaces = places.filter((p) => !isSwiped(p.id));
   const currentCard = remainingPlaces[0];
   const nextCard = remainingPlaces[1];
+  const thirdCard = remainingPlaces[2];
 
   // Drag interaction physics
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const startPos = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
-  // Fly-out animation and depth interpolation state
-  const [flyDirection, setFlyDirection] = useState<'liked' | 'rejected' | null>(null);
+  // Exiting fly-out animation state (independent floating layer)
+  const [exitingCard, setExitingCard] = useState<ExitingCardState | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [activeButton, setActiveButton] = useState<'liked' | 'rejected' | null>(null);
   const animTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -56,28 +65,43 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     (action: 'liked' | 'rejected') => {
       if (isAnimating || !currentCard) return;
 
+      const currentX = dragOffset.x;
+      const currentY = dragOffset.y;
+      const currentRot = dragOffset.x * 0.08;
+
       setIsAnimating(true);
-      setFlyDirection(action);
       setActiveButton(action);
 
+      // In test or instant mode (duration <= 0), execute immediately without flying overlay
       if (animationDuration <= 0) {
         onSwipe(currentCard, action);
-        setFlyDirection(null);
         setIsAnimating(false);
         setActiveButton(null);
         setDragOffset({ x: 0, y: 0 });
         return;
       }
 
+      // 1. Capture the exiting card snapshot to animate outward independently
+      setExitingCard({
+        poi: currentCard,
+        action,
+        startX: currentX,
+        startY: currentY,
+        startRot: currentRot,
+      });
+
+      // 2. Advance the stack immediately so underlying cards elevate like a real deck
+      onSwipe(currentCard, action);
+      setDragOffset({ x: 0, y: 0 });
+
+      // 3. Dismount the exiting card once fly-out animation completes
       animTimeoutRef.current = setTimeout(() => {
-        onSwipe(currentCard, action);
-        setFlyDirection(null);
+        setExitingCard(null);
         setIsAnimating(false);
         setActiveButton(null);
-        setDragOffset({ x: 0, y: 0 });
       }, animationDuration);
     },
-    [isAnimating, currentCard, onSwipe, animationDuration]
+    [isAnimating, currentCard, dragOffset.x, dragOffset.y, onSwipe, animationDuration]
   );
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -147,7 +171,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentCard, isAnimating, triggerSwipe, canUndo, onUndo]);
 
-  if (!currentCard) {
+  if (!currentCard && !exitingCard) {
     return (
       <div className="swipe-deck-container">
         <div className="empty-deck-card">
@@ -189,64 +213,61 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   // Calculate dynamic rotation and drag progress based on horizontal offset
   const dragProgress = Math.min(1, Math.abs(dragOffset.x) / 110);
   const rotation = dragOffset.x * 0.08;
-  const isLiking = dragOffset.x > 30 || flyDirection === 'liked';
-  const isRejecting = dragOffset.x < -30 || flyDirection === 'rejected';
+  const isLiking = dragOffset.x > 30;
+  const isRejecting = dragOffset.x < -30;
 
-  // Opacity of decision stamps
-  const stampOpacity =
-    flyDirection !== null
-      ? 1
-      : isDragging
-      ? Math.min(1, Math.max(0, (Math.abs(dragOffset.x) - 30) / 70))
-      : 0;
+  // Stamp opacity during drag
+  const stampOpacity = isDragging
+    ? Math.min(1, Math.max(0, (Math.abs(dragOffset.x) - 30) / 70))
+    : 0;
 
-  // Transform styling for the active current card
-  let currentCardTransform = `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${rotation}deg)`;
-  let currentCardOpacity = 1;
-  let currentCardTransition = isDragging
-    ? 'none'
-    : 'transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out';
+  // Next card depth interpolation during dragging
+  const nextCardScale = isDragging ? 0.94 + dragProgress * 0.06 : 0.94;
+  const nextCardTranslateY = isDragging ? 16 - dragProgress * 16 : 16;
+  const nextCardOpacity = isDragging ? 0.75 + dragProgress * 0.25 : 0.75;
 
-  if (flyDirection === 'liked') {
-    currentCardTransform = `translate3d(140%, ${dragOffset.y || 0}px, 0) rotate(22deg)`;
-    currentCardOpacity = 0;
-    currentCardTransition = `transform ${animationDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${animationDuration}ms ease-out`;
-  } else if (flyDirection === 'rejected') {
-    currentCardTransform = `translate3d(-140%, ${dragOffset.y || 0}px, 0) rotate(-22deg)`;
-    currentCardOpacity = 0;
-    currentCardTransition = `transform ${animationDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${animationDuration}ms ease-out`;
-  }
-
-  // Transform styling for the underlying next card (depth interpolation)
-  let nextCardScale = 0.94;
-  let nextCardTranslateY = 18;
-  let nextCardOpacity = 0.75;
-  let nextCardTransition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease-out';
-
-  if (flyDirection !== null) {
-    nextCardScale = 1;
-    nextCardTranslateY = 0;
-    nextCardOpacity = 1;
-    nextCardTransition = `transform ${animationDuration}ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity ${animationDuration}ms ease-out`;
-  } else if (isDragging) {
-    nextCardScale = 0.94 + dragProgress * 0.06;
-    nextCardTranslateY = 18 - dragProgress * 18;
-    nextCardOpacity = 0.75 + dragProgress * 0.25;
-    nextCardTransition = 'none';
-  }
+  // Third card depth interpolation during dragging
+  const thirdCardScale = isDragging ? 0.88 + dragProgress * 0.06 : 0.88;
+  const thirdCardTranslateY = isDragging ? 32 - dragProgress * 16 : 32;
+  const thirdCardOpacity = isDragging ? 0.5 + dragProgress * 0.25 : 0.5;
 
   return (
     <div className="swipe-deck-container">
       <div className="cards-stack-area">
-        {/* Next Card underneath for seamless depth reveal */}
+        {/* 1. Third Card underneath in the deck */}
+        {thirdCard && (
+          <div
+            key={thirdCard.id}
+            className="swipe-card is-third"
+            aria-hidden="true"
+            style={{
+              transform: `translate3d(0, ${thirdCardTranslateY}px, 0) scale(${thirdCardScale})`,
+              opacity: thirdCardOpacity,
+              transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease-out',
+            }}
+          >
+            <div className="card-image-wrapper">
+              <img
+                src={thirdCard.imageUrl}
+                alt={thirdCard.name}
+                className="card-image"
+                loading="lazy"
+              />
+              <div className="card-gradient-overlay" />
+            </div>
+          </div>
+        )}
+
+        {/* 2. Next Card underneath elevating smoothly */}
         {nextCard && (
           <div
+            key={nextCard.id}
             className="swipe-card is-next"
             aria-hidden="true"
             style={{
               transform: `translate3d(0, ${nextCardTranslateY}px, 0) scale(${nextCardScale})`,
               opacity: nextCardOpacity,
-              transition: nextCardTransition,
+              transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease-out',
             }}
           >
             <div className="card-image-wrapper">
@@ -270,87 +291,132 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           </div>
         )}
 
-        {/* Current Active Card with Tinder Fly-Out Physics */}
-        <div
-          className={`swipe-card is-current ${flyDirection ? `flying-${flyDirection}` : ''}`}
-          style={{
-            transform: currentCardTransform,
-            opacity: currentCardOpacity,
-            transition: currentCardTransition,
-          }}
-          onMouseDown={handleTouchStart}
-          onTouchStart={handleTouchStart}
-          data-testid="swipe-card"
-        >
-          <div className="card-image-wrapper">
-            <img
-              src={currentCard.imageUrl}
-              alt={currentCard.name}
-              className="card-image"
-              draggable={false}
-            />
-            <div className="card-gradient-overlay" />
+        {/* 3. Current Active Card with tactile touch and key stability */}
+        {currentCard && (
+          <div
+            key={currentCard.id}
+            className="swipe-card is-current"
+            style={{
+              transform: `translate3d(${dragOffset.x}px, ${dragOffset.y}px, 0) rotate(${rotation}deg)`,
+              transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+            }}
+            onMouseDown={handleTouchStart}
+            onTouchStart={handleTouchStart}
+            data-testid="swipe-card"
+          >
+            <div className="card-image-wrapper">
+              <img
+                src={currentCard.imageUrl}
+                alt={currentCard.name}
+                className="card-image"
+                draggable={false}
+              />
+              <div className="card-gradient-overlay" />
 
-            {/* Top Badges */}
-            <div className="card-top-badges">
-              <span className="category-tag">{formatCategory(currentCard.category)}</span>
-              <span className="environment-tag">
-                {currentCard.environment === 'OUTDOOR' ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Sun size={12} />
-                    <span>Ao Ar Livre</span>
-                  </span>
-                ) : (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Landmark size={12} />
-                    <span>Coberto</span>
-                  </span>
-                )}
-              </span>
-            </div>
-
-            {/* Visual Decision Stamp Overlays */}
-            {isLiking && (
-              <div
-                className="swipe-stamp like"
-                data-testid="stamp-like"
-                style={{ opacity: stampOpacity }}
-              >
-                CURTIR
-              </div>
-            )}
-            {isRejecting && (
-              <div
-                className="swipe-stamp reject"
-                data-testid="stamp-reject"
-                style={{ opacity: stampOpacity }}
-              >
-                PASSAR
-              </div>
-            )}
-
-            {/* Bottom Content Overlay */}
-            <div className="card-content-overlay">
-              <h2 className="card-title">{currentCard.name}</h2>
-              {currentCard.address && (
-                <p className="card-address">
-                  <MapPin size={14} style={{ flexShrink: 0, opacity: 0.9 }} />
-                  <span>{currentCard.address}</span>
-                </p>
-              )}
-              <p className="card-description">{currentCard.description}</p>
-              {currentCard.tags && currentCard.tags.length > 0 && (
-                <div className="card-tags">
-                  {currentCard.tags.slice(0, 3).map((tag, idx) => (
-                    <span key={idx} className="card-tag">
-                      #{tag}
+              {/* Top Badges */}
+              <div className="card-top-badges">
+                <span className="category-tag">{formatCategory(currentCard.category)}</span>
+                <span className="environment-tag">
+                  {currentCard.environment === 'OUTDOOR' ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Sun size={12} />
+                      <span>Ao Ar Livre</span>
                     </span>
-                  ))}
+                  ) : (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Landmark size={12} />
+                      <span>Coberto</span>
+                    </span>
+                  )}
+                </span>
+              </div>
+
+              {/* Dynamic Stamp Overlays during Drag */}
+              {isLiking && (
+                <div
+                  className="swipe-stamp like"
+                  data-testid="stamp-like"
+                  style={{ opacity: stampOpacity }}
+                >
+                  CURTIR
                 </div>
               )}
+              {isRejecting && (
+                <div
+                  className="swipe-stamp reject"
+                  data-testid="stamp-reject"
+                  style={{ opacity: stampOpacity }}
+                >
+                  PASSAR
+                </div>
+              )}
+
+              {/* Bottom Content Overlay */}
+              <div className="card-content-overlay">
+                <h2 className="card-title">{currentCard.name}</h2>
+                {currentCard.address && (
+                  <p className="card-address">
+                    <MapPin size={14} style={{ flexShrink: 0, opacity: 0.9 }} />
+                    <span>{currentCard.address}</span>
+                  </p>
+                )}
+                <p className="card-description">{currentCard.description}</p>
+                {currentCard.tags && currentCard.tags.length > 0 && (
+                  <div className="card-tags">
+                    {currentCard.tags.slice(0, 3).map((tag, idx) => (
+                      <span key={idx} className="card-tag">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* 4. Independent Flying Overlay for Exiting Card (Never snaps back to center) */}
+        {exitingCard && (
+          <div
+            key={`exiting-${exitingCard.poi.id}`}
+            className={`swipe-card is-exiting flying-${exitingCard.action}`}
+            data-testid="exiting-card"
+            style={
+              {
+                '--start-x': `${exitingCard.startX}px`,
+                '--start-y': `${exitingCard.startY}px`,
+                '--start-rot': `${exitingCard.startRot}deg`,
+                '--fly-duration': `${animationDuration}ms`,
+              } as React.CSSProperties
+            }
+          >
+            <div className="card-image-wrapper">
+              <img
+                src={exitingCard.poi.imageUrl}
+                alt={exitingCard.poi.name}
+                className="card-image"
+                draggable={false}
+              />
+              <div className="card-gradient-overlay" />
+
+              <div className="card-top-badges">
+                <span className="category-tag">{formatCategory(exitingCard.poi.category)}</span>
+              </div>
+
+              {/* Prominent Stamp during fly-out */}
+              <div
+                className={`swipe-stamp ${exitingCard.action === 'liked' ? 'like' : 'reject'}`}
+                style={{ opacity: 1 }}
+              >
+                {exitingCard.action === 'liked' ? 'CURTIR' : 'PASSAR'}
+              </div>
+
+              <div className="card-content-overlay">
+                <h2 className="card-title">{exitingCard.poi.name}</h2>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tactile Bottom Action Controls */}

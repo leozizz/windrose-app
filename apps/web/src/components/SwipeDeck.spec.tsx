@@ -29,6 +29,18 @@ describe('SwipeDeck Component', () => {
       imageUrl: 'https://example.com/ponte.jpg',
       tags: ['Ponte', 'História'],
     },
+    {
+      id: 'poi-3',
+      name: 'Mercado Público',
+      category: PoiCategory.RESTAURANT,
+      environment: PoiEnvironment.INDOOR,
+      latitude: -27.598,
+      longitude: -48.553,
+      city: 'Florianópolis',
+      description: 'Gastronomia típica',
+      imageUrl: 'https://example.com/mercado.jpg',
+      tags: ['Gastronomia'],
+    },
   ];
 
   beforeEach(() => {
@@ -101,7 +113,7 @@ describe('SwipeDeck Component', () => {
     expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
   });
 
-  it('deve executar animação de fly-out fluida antes de disparar o callback quando animationDuration > 0', () => {
+  it('deve exibir overlay de voo independente e animar sem retorno ao centro quando animationDuration > 0', () => {
     vi.useFakeTimers();
     const handleSwipe = vi.fn();
 
@@ -121,21 +133,22 @@ describe('SwipeDeck Component', () => {
     const likeButton = screen.getByRole('button', { name: /curtir/i });
     fireEvent.click(likeButton);
 
-    // O callback ainda não deve ter sido executado imediatamente durante o fly-out
-    expect(handleSwipe).not.toHaveBeenCalled();
+    // Callback onSwipe dispara para a pilha ascender
+    expect(handleSwipe).toHaveBeenCalledTimes(1);
+    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
 
-    // O card do topo recebe a classe de voo e o botão recebe pulso
-    const card = screen.getByTestId('swipe-card');
-    expect(card.className).toContain('flying-liked');
+    // Overlay de voo independente está ativo no topo com classe flying-liked
+    const exitingCard = screen.getByTestId('exiting-card');
+    expect(exitingCard).toBeDefined();
+    expect(exitingCard.className).toContain('flying-liked');
     expect(likeButton.className).toContain('btn-pulse-like');
 
-    // Ao avançar o timer dos 300ms, a animação conclui e dispara o callback
+    // Ao avançar o tempo dos 300ms, o card de saída conclui o voo e é desmontado
     act(() => {
       vi.advanceTimersByTime(300);
     });
 
-    expect(handleSwipe).toHaveBeenCalledTimes(1);
-    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
+    expect(screen.queryByTestId('exiting-card')).toBeNull();
   });
 
   it('deve desabilitar botões durante a animação de fly-out para evitar múltiplos cliques acidentais', () => {
@@ -170,8 +183,9 @@ describe('SwipeDeck Component', () => {
       vi.advanceTimersByTime(300);
     });
 
-    expect(handleSwipe).toHaveBeenCalledTimes(1);
-    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
+    // Após conclusão da animação, os botões voltam a ficar habilitados
+    expect(rejectButton).toHaveProperty('disabled', false);
+    expect(likeButton).toHaveProperty('disabled', false);
   });
 
   it('deve exibir mensagem de conclusão quando todos os cartões foram swipados', () => {
