@@ -1,4 +1,18 @@
 import React, { useState } from 'react';
+import {
+  Sunrise,
+  Sun,
+  Moon,
+  MapPin,
+  Calendar,
+  FileDown,
+  ExternalLink,
+  QrCode,
+  Map,
+  CloudRain,
+  Sparkles,
+  Lightbulb,
+} from 'lucide-react';
 import { TripItinerary, PoiSlot } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
 import { InteractiveMap } from './InteractiveMap';
@@ -29,7 +43,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   if (!itinerary.days || itinerary.days.length === 0) {
     return (
       <div className="empty-deck-card">
-        <div className="empty-deck-icon">🗺️</div>
+        <div className="empty-deck-icon">
+          <Map size={44} style={{ color: 'var(--primary)' }} />
+        </div>
         <h3>Nenhum roteiro gerado ainda</h3>
         <p>
           Você ainda não deu Match em nenhum lugar. Vá para a aba <strong>Descoberta</strong> e
@@ -46,17 +62,17 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     );
   }
 
-  const getSlotIcon = (slotType: string): string => {
+  const getSlotIcon = (slotType: string) => {
     switch (slotType.toUpperCase()) {
       case 'MORNING':
-        return '🌅';
+        return <Sunrise size={18} />;
       case 'AFTERNOON':
-        return '☀️';
+        return <Sun size={18} />;
       case 'EVENING':
       case 'NIGHT':
-        return '🌙';
+        return <Moon size={18} />;
       default:
-        return '📍';
+        return <MapPin size={18} />;
     }
   };
 
@@ -73,11 +89,11 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
   return (
     <div className="itinerary-container">
-      {/* Editorial Magazine Style Cover */}
+      {/* Magazine Style Header Cover */}
       <section className="itinerary-magazine-cover">
         <div className="itinerary-cover-top">
-          <span className="itinerary-cover-badge">Windrose Wanderlust • Guia Editorial</span>
-          <span className="itinerary-cover-edition">Edição Especial de Viagem</span>
+          <span className="itinerary-cover-badge">Guia de Viagem Personalizado</span>
+          <span className="itinerary-cover-edition">Roteiro Inteligente</span>
         </div>
 
         <h1 className="itinerary-cover-title">Roteiro em {itinerary.city}</h1>
@@ -110,17 +126,21 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               type="button"
               className="action-button-primary btn-print"
               onClick={handlePrintPdf}
-              title="Salvar como PDF ou Imprimir este guia editorial"
+              title="Salvar como PDF ou Imprimir este roteiro"
+              style={{ display: 'inline-flex', alignItems: 'center' }}
             >
-              📄 Baixar PDF Editorial
+              <FileDown size={17} style={{ marginRight: '6px' }} />
+              <span>Baixar PDF do Roteiro</span>
             </button>
             <button
               type="button"
               className="action-button-secondary btn-calendar"
               onClick={handleDownloadIcs}
               title="Adicionar horários e paradas à sua agenda do celular"
+              style={{ display: 'inline-flex', alignItems: 'center' }}
             >
-              📅 Exportar Calendário (.ICS)
+              <Calendar size={17} style={{ marginRight: '6px' }} />
+              <span>Exportar Calendário (.ICS)</span>
             </button>
           </div>
         </div>
@@ -138,14 +158,16 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               loading="lazy"
             />
           ) : (
-            <div className="companion-qr-fallback">📱</div>
+            <div className="companion-qr-fallback" data-testid="qr-fallback">
+              <QrCode size={44} style={{ color: 'var(--text-muted)' }} />
+            </div>
           )}
         </div>
         <div className="companion-text-content">
           <span className="companion-tag">Navegação Móvel Instantânea</span>
           <h3 className="companion-title">Leve seu guia de viagem no bolso</h3>
           <p className="companion-desc">
-            Aponte a câmera do seu smartphone para o QR Code acima para abrir as localizações do roteiro de {itinerary.city} diretamente no Google Maps.
+            Aponte a câmera do seu smartphone para o QR Code para abrir as localizações do roteiro de {itinerary.city} diretamente no Google Maps.
           </p>
           <a
             href={mapsQueryUrl}
@@ -153,7 +175,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             rel="noopener noreferrer"
             className="companion-link no-print"
           >
-            Abrir Destino no Google Maps ↗
+            <span>Abrir Destino no Google Maps</span>
+            <ExternalLink size={13} style={{ marginLeft: '4px' }} />
           </a>
         </div>
       </section>
@@ -163,7 +186,10 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
         <section className="itinerary-map-section no-print">
           <div className="section-header-flex">
             <div>
-              <h3 className="itinerary-section-heading">🗺️ Mapa Geral do Roteiro</h3>
+              <h3 className="itinerary-section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Map size={20} />
+                <span>Mapa Geral do Roteiro</span>
+              </h3>
               <p className="itinerary-section-subheading">
                 Visualize a distribuição geográfica de todas as suas paradas programadas.
               </p>
@@ -199,11 +225,13 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 </span>
                 {day.isRainyOrAdverse ? (
                   <span className="adverse-weather-badge">
-                    🌧️ Otimizado para Chuva
+                    <CloudRain size={13} style={{ marginRight: '4px', display: 'inline', verticalAlign: 'middle' }} />
+                    <span>Otimizado para Chuva</span>
                   </span>
                 ) : (
                   <span className="ideal-weather-badge">
-                    ✨ Atividades ao Ar Livre
+                    <Sun size={13} style={{ marginRight: '4px', display: 'inline', verticalAlign: 'middle' }} />
+                    <span>Ideal ao Ar Livre</span>
                   </span>
                 )}
               </div>
@@ -251,7 +279,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                         {slot.place.address && (
                           <p className="period-poi-address">
-                            <span className="address-pin-icon">📍</span>
+                            <MapPin size={13} className="address-pin-icon" style={{ flexShrink: 0, opacity: 0.9 }} />
                             <span>{slot.place.address}</span>
                           </p>
                         )}
@@ -260,7 +288,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                         {slot.weatherOptimizationNote && (
                           <div className="period-poi-weather-note">
-                            <span className="note-icon">💡</span>
+                            <Sparkles size={13} className="note-icon" style={{ flexShrink: 0 }} />
                             <span>{slot.weatherOptimizationNote}</span>
                           </div>
                         )}
@@ -272,7 +300,8 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                             rel="noopener noreferrer"
                             className="btn-open-maps"
                           >
-                            Abrir no Google Maps ↗
+                            <span>Abrir no Google Maps</span>
+                            <ExternalLink size={12} style={{ marginLeft: '4px' }} />
                           </a>
                         </div>
                       </div>
@@ -285,17 +314,17 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
         ))}
       </div>
 
-      {/* Editorial Travel Guide Footer */}
+      {/* Guide Footer */}
       <footer className="itinerary-editorial-footer">
         <div className="footer-tip-box">
-          <span className="tip-box-icon">💡</span>
+          <Lightbulb size={22} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
           <p>
             <strong>Dica do Guia Windrose:</strong> As condições meteorológicas e horários de visitação podem variar.
             Confira a abertura dos atrativos antes do embarque e aproveite sua estadia em {itinerary.city}!
           </p>
         </div>
         <div className="footer-brand-signature">
-          <span>Windrose Wanderlust App • Roteiros Inteligentes e Meteorologia</span>
+          <span>Windrose • Planejador Inteligente de Viagens e Clima</span>
         </div>
       </footer>
     </div>

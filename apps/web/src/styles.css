@@ -1589,3 +1589,17 @@ h1, h2, h3, h4, h5, h6 {
     padding-top: 1rem !important;
   }
 }
+
+/* Icon Animation Utilities */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-animate {
+  animation: spin 1s linear infinite;
+}

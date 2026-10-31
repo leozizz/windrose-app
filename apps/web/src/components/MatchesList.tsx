@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { LayoutGrid, Map, ArrowLeft, Sparkles, Trash2, MapPin, Sun, Landmark, ExternalLink, Compass } from 'lucide-react';
 import { PointOfInterest } from '@windrose/shared-types';
 import { InteractiveMap } from './InteractiveMap';
 import { formatCategory } from '../utils/labels';
@@ -36,18 +37,20 @@ export const MatchesList: React.FC<MatchesListProps> = ({
               <button
                 type="button"
                 className={`nav-tab-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center' }}
                 onClick={() => setViewMode('grid')}
               >
-                🖼️ Grade
+                <LayoutGrid size={15} style={{ marginRight: '6px' }} />
+                <span>Grade</span>
               </button>
               <button
                 type="button"
                 className={`nav-tab-btn ${viewMode === 'map' ? 'active' : ''}`}
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem' }}
+                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center' }}
                 onClick={() => setViewMode('map')}
               >
-                🗺️ Mapa
+                <Map size={15} style={{ marginRight: '6px' }} />
+                <span>Mapa</span>
               </button>
             </div>
           )}
@@ -56,8 +59,10 @@ export const MatchesList: React.FC<MatchesListProps> = ({
             type="button"
             className="action-button-secondary"
             onClick={onBackToSwipe}
+            style={{ display: 'inline-flex', alignItems: 'center' }}
           >
-            ← Continuar Explorando
+            <ArrowLeft size={16} style={{ marginRight: '6px' }} />
+            <span>Continuar Explorando</span>
           </button>
           {matches.length > 0 && (
             <>
@@ -65,16 +70,20 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 type="button"
                 className="action-button-primary"
                 onClick={onGenerateItinerary}
+                style={{ display: 'inline-flex', alignItems: 'center' }}
               >
-                ✨ Gerar Roteiro Editorial →
+                <Sparkles size={16} style={{ marginRight: '6px' }} />
+                <span>Gerar Roteiro Personalizado →</span>
               </button>
               <button
                 type="button"
                 className="action-button-danger"
                 onClick={onClearMatches}
                 title="Limpar todos os matches desta cidade"
+                style={{ display: 'inline-flex', alignItems: 'center' }}
               >
-                Limpar
+                <Trash2 size={14} style={{ marginRight: '4px' }} />
+                <span>Limpar</span>
               </button>
             </>
           )}
@@ -83,7 +92,9 @@ export const MatchesList: React.FC<MatchesListProps> = ({
 
       {matches.length === 0 ? (
         <div className="empty-deck-card">
-          <div className="empty-deck-icon">🏖️</div>
+          <div className="empty-deck-icon">
+            <Compass size={44} style={{ color: 'var(--primary)' }} />
+          </div>
           <h3>Nenhum local curtido ainda</h3>
           <p>Explore as atrações e dê match nos locais que você mais gostar para montar seu roteiro!</p>
           <button
@@ -117,13 +128,24 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 <h3 className="match-card-title">{poi.name}</h3>
                 {poi.address && (
                   <p className="match-card-address">
-                    <span>📍</span> {poi.address}
+                    <MapPin size={13} style={{ flexShrink: 0, opacity: 0.9 }} />
+                    <span>{poi.address}</span>
                   </p>
                 )}
                 <p className="match-card-desc">{poi.description}</p>
                 <div className="match-card-footer">
                   <span className="environment-tag">
-                    {poi.environment === 'OUTDOOR' ? '☀️ Ao Ar Livre' : '🏛️ Coberto'}
+                    {poi.environment === 'OUTDOOR' ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Sun size={12} />
+                        <span>Ao Ar Livre</span>
+                      </span>
+                    ) : (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Landmark size={12} />
+                        <span>Coberto</span>
+                      </span>
+                    )}
                   </span>
                   {poi.website && (
                     <a
@@ -131,9 +153,10 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="action-button-secondary"
-                      style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem' }}
+                      style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                     >
-                      Site ↗
+                      <span>Site</span>
+                      <ExternalLink size={11} />
                     </a>
                   )}
                 </div>

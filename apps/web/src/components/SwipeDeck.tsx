@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { RotateCcw, X, Heart, MapPin, Sun, Landmark, Sparkles } from 'lucide-react';
 import { PointOfInterest } from '@windrose/shared-types';
 import { formatCategory } from '../utils/labels';
 
@@ -99,7 +100,9 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     return (
       <div className="swipe-deck-container">
         <div className="empty-deck-card">
-          <div className="empty-deck-icon">✨</div>
+          <div className="empty-deck-icon">
+            <Sparkles size={44} style={{ color: 'var(--primary)' }} />
+          </div>
           <h3>Você explorou todos os locais!</h3>
           <p>
             {totalLikes > 0
@@ -113,7 +116,8 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 className="action-button-secondary"
                 onClick={onUndo}
               >
-                ↺ Desfazer Última Escolha
+                <RotateCcw size={15} style={{ marginRight: '6px' }} />
+                <span>Desfazer Última Escolha</span>
               </button>
             )}
             {totalLikes > 0 && (
@@ -122,7 +126,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 className="action-button-primary"
                 onClick={onViewMatches}
               >
-                Ver {totalLikes} Matches →
+                <span>Ver {totalLikes} Matches →</span>
               </button>
             )}
           </div>
@@ -153,7 +157,10 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               <div className="card-content-overlay">
                 <h3 className="card-title">{nextCard.name}</h3>
                 {nextCard.address && (
-                  <p className="card-address">📍 {nextCard.address}</p>
+                  <p className="card-address">
+                    <MapPin size={13} style={{ flexShrink: 0, opacity: 0.85 }} />
+                    <span>{nextCard.address}</span>
+                  </p>
                 )}
               </div>
             </div>
@@ -184,7 +191,17 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
             <div className="card-top-badges">
               <span className="category-tag">{formatCategory(currentCard.category)}</span>
               <span className="environment-tag">
-                {currentCard.environment === 'OUTDOOR' ? '☀️ Ao Ar Livre' : '🏛️ Coberto'}
+                {currentCard.environment === 'OUTDOOR' ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Sun size={12} />
+                    <span>Ao Ar Livre</span>
+                  </span>
+                ) : (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Landmark size={12} />
+                    <span>Coberto</span>
+                  </span>
+                )}
               </span>
             </div>
 
@@ -205,7 +222,8 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               <h2 className="card-title">{currentCard.name}</h2>
               {currentCard.address && (
                 <p className="card-address">
-                  <span>📍</span> {currentCard.address}
+                  <MapPin size={14} style={{ flexShrink: 0, opacity: 0.9 }} />
+                  <span>{currentCard.address}</span>
                 </p>
               )}
               <p className="card-description">{currentCard.description}</p>
@@ -233,7 +251,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           title="Desfazer última decisão (Ctrl+Z)"
           aria-label="Desfazer"
         >
-          ↺
+          <RotateCcw size={18} strokeWidth={2.2} />
         </button>
 
         <button
@@ -243,7 +261,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           title="Não tenho interesse (Seta Esquerda)"
           aria-label="Rejeitar"
         >
-          ✕
+          <X size={24} strokeWidth={2.4} />
         </button>
 
         <button
@@ -253,7 +271,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           title="Curtir e adicionar ao roteiro (Seta Direita)"
           aria-label="Curtir"
         >
-          ♥
+          <Heart size={24} strokeWidth={2.4} />
         </button>
 
         <button
