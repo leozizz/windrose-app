@@ -137,8 +137,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     <div
       className="interactive-map-wrapper"
       style={{
-        height,
-        width: '100%',
+        height, width: '100%', position: 'relative', zIndex: 1, isolation: 'isolate',
         borderRadius: 'var(--radius-xl, 24px)',
         overflow: 'hidden',
         boxShadow: 'var(--shadow-card)',
@@ -224,3 +223,4 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     </div>
   );
 };
+

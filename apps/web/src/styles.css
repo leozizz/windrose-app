@@ -95,7 +95,7 @@ h1, h2, h3, h4, h5, h6 {
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: 1000;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   background: rgba(255, 255, 255, 0.85);
@@ -1135,7 +1135,7 @@ h1, h2, h3, h4, h5, h6 {
   text-decoration: underline;
 }
 
-/* Map Section in Itinerary */
+/* Map Section in Itinerary & Matches */
 .itinerary-map-section {
   background: #ffffff;
   border: 1px solid var(--border-light);
@@ -1143,6 +1143,12 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-card);
   padding: 1.5rem;
   margin-bottom: 2.5rem;
+}
+
+.interactive-map-wrapper {
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
 }
 
 .section-header-flex {
@@ -1524,7 +1530,7 @@ h1, h2, h3, h4, h5, h6 {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: 1100;
     background: rgba(255, 255, 255, 0.94);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -1812,6 +1818,15 @@ h1, h2, h3, h4, h5, h6 {
     min-height: 44px;
     display: inline-flex;
     align-items: center;
+  }
+
+  .itinerary-map-section {
+    padding: 1rem 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .interactive-map-wrapper {
+    height: clamp(280px, 46vh, 400px) !important;
   }
 }
 
