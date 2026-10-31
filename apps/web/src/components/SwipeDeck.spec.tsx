@@ -69,7 +69,7 @@ describe('SwipeDeck Component', () => {
     expect(screen.getByText('#Surf')).toBeDefined();
   });
 
-  it('deve disparar onSwipe com "liked" ao clicar no botão de coração', () => {
+  it('deve disparar onSwipe com "liked" ao clicar no botão de coração em modo instantâneo', () => {
     const handleSwipe = vi.fn();
 
     render(
@@ -81,6 +81,7 @@ describe('SwipeDeck Component', () => {
         canUndo={false}
         onViewMatches={vi.fn()}
         totalLikes={0}
+        animationDuration={0}
       />
     );
 
@@ -91,7 +92,7 @@ describe('SwipeDeck Component', () => {
     expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
   });
 
-  it('deve disparar onSwipe com "rejected" ao clicar no botão de passar', () => {
+  it('deve disparar onSwipe com "rejected" ao clicar no botão de passar em modo instantâneo', () => {
     const handleSwipe = vi.fn();
 
     render(
@@ -103,6 +104,7 @@ describe('SwipeDeck Component', () => {
         canUndo={false}
         onViewMatches={vi.fn()}
         totalLikes={0}
+        animationDuration={0}
       />
     );
 
@@ -113,7 +115,7 @@ describe('SwipeDeck Component', () => {
     expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
   });
 
-  it('deve exibir overlay de voo independente e animar sem retorno ao centro quando animationDuration > 0', () => {
+  it('deve executar fly-out com fade-out gradual e chamar onSwipe somente ao fim da animação', () => {
     vi.useFakeTimers();
     const handleSwipe = vi.fn();
 
@@ -126,32 +128,35 @@ describe('SwipeDeck Component', () => {
         canUndo={false}
         onViewMatches={vi.fn()}
         totalLikes={0}
-        animationDuration={300}
+        animationDuration={340}
       />
     );
 
     const likeButton = screen.getByRole('button', { name: /curtir/i });
     fireEvent.click(likeButton);
 
-    // Callback onSwipe dispara para a pilha ascender
-    expect(handleSwipe).toHaveBeenCalledTimes(1);
-    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
+    // Durante o voo e fade-out, o callback ainda NÃO foi disparado
+    expect(handleSwipe).not.toHaveBeenCalled();
 
-    // Overlay de voo independente está ativo no topo com classe flying-liked
-    const exitingCard = screen.getByTestId('exiting-card');
-    expect(exitingCard).toBeDefined();
-    expect(exitingCard.className).toContain('flying-liked');
+    // O card ativo em voo possui classe flying-liked e o botão de curtir pulsa
+    const card = screen.getByTestId('swipe-card');
+    expect(card.className).toContain('flying-liked');
     expect(likeButton.className).toContain('btn-pulse-like');
 
-    // Ao avançar o tempo dos 300ms, o card de saída conclui o voo e é desmontado
+    // O stamp de curtir aparece exclusivamente no card que está voando
+    const stamp = screen.getByTestId('stamp-like');
+    expect(stamp).toBeDefined();
+
+    // Ao avançar o tempo dos 340ms, a transição se completa e o callback é acionado
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(340);
     });
 
-    expect(screen.queryByTestId('exiting-card')).toBeNull();
+    expect(handleSwipe).toHaveBeenCalledTimes(1);
+    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
   });
 
-  it('deve desabilitar botões durante a animação de fly-out para evitar múltiplos cliques acidentais', () => {
+  it('deve desabilitar botões durante a animação de saída para evitar cliques múltiplos', () => {
     vi.useFakeTimers();
     const handleSwipe = vi.fn();
 
@@ -164,7 +169,7 @@ describe('SwipeDeck Component', () => {
         canUndo={true}
         onViewMatches={vi.fn()}
         totalLikes={0}
-        animationDuration={300}
+        animationDuration={340}
       />
     );
 
@@ -180,12 +185,11 @@ describe('SwipeDeck Component', () => {
     expect(undoButton).toHaveProperty('disabled', true);
 
     act(() => {
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(340);
     });
 
-    // Após conclusão da animação, os botões voltam a ficar habilitados
-    expect(rejectButton).toHaveProperty('disabled', false);
-    expect(likeButton).toHaveProperty('disabled', false);
+    expect(handleSwipe).toHaveBeenCalledTimes(1);
+    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
   });
 
   it('deve exibir mensagem de conclusão quando todos os cartões foram swipados', () => {
