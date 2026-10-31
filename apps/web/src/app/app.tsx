@@ -138,7 +138,7 @@ export function App() {
   }, [ranking, likedPlacesList, dailyScoresList, activeCity]);
 
   return (
-    <div>
+    <div className="app-root">
       {/* Modern Glassmorphic App Header */}
       <header className="app-header">
         <div className="header-container">
@@ -153,7 +153,7 @@ export function App() {
           </div>
 
           {/* Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="header-search-form">
+          <form onSubmit={handleSearchSubmit} className="header-search-form" role="search">
             <Search size={16} style={{ marginRight: '0.5rem', opacity: 0.6, flexShrink: 0 }} aria-hidden="true" />
             <input
               type="text"
@@ -167,6 +167,7 @@ export function App() {
               type="submit"
               className="header-search-btn"
               disabled={loadingWeather}
+              aria-label="Explorar cidade"
             >
               {loadingWeather ? (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -184,57 +185,40 @@ export function App() {
       <main className="container">
         {/* Empty State / Welcome Screen when no city is searched yet */}
         {!activeCity && !loadingWeather && (
-          <section className="welcome-hero-card" style={{
-            background: '#ffffff',
-            borderRadius: 'var(--radius-xl, 28px)',
-            border: '1px solid var(--border-light)',
-            boxShadow: 'var(--shadow-card)',
-            padding: '4rem 2rem',
-            textAlign: 'center',
-            maxWidth: '680px',
-            margin: '3rem auto',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
-              <div style={{
-                width: '72px',
-                height: '72px',
-                borderRadius: '50%',
-                background: 'var(--primary-subtle, #ffedd5)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--primary, #ea580c)',
-              }}>
-                <Globe size={38} strokeWidth={1.8} />
+          <section className="welcome-hero-card">
+            <div className="hero-globe-wrapper">
+              <div className="hero-globe-circle">
+                <Globe size={36} strokeWidth={1.8} />
               </div>
             </div>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
+            <h2 className="hero-title">
               Para onde você quer viajar?
             </h2>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+            <p className="hero-description">
               Descubra os melhores pontos turísticos, restaurantes e passeios com base na previsão do tempo em tempo real.
               Dê matches nas atrações e gere seu roteiro inteligente!
             </p>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.6rem' }}>
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', alignSelf: 'center', marginRight: '0.5rem' }}>
+            <div className="hero-suggestions-container">
+              <span className="hero-suggestions-label">
                 Sugestões populares:
               </span>
-              {['Campinas', 'São Paulo', 'Rio de Janeiro', 'Curitiba', 'Salvador', 'Lisboa'].map((citySuggestion) => (
-                <button
-                  key={citySuggestion}
-                  type="button"
-                  className="action-button-secondary"
-                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                  onClick={() => {
-                    setCityNameInput(citySuggestion);
-                    fetchData(citySuggestion, selectedActivity);
-                  }}
-                >
-                  <MapPin size={12} style={{ color: 'var(--primary)' }} />
-                  <span>{citySuggestion}</span>
-                </button>
-              ))}
+              <div className="hero-suggestions-list">
+                {['Campinas', 'São Paulo', 'Rio de Janeiro', 'Curitiba', 'Salvador', 'Lisboa'].map((citySuggestion) => (
+                  <button
+                    key={citySuggestion}
+                    type="button"
+                    className="action-button-secondary suggestion-pill-btn"
+                    onClick={() => {
+                      setCityNameInput(citySuggestion);
+                      fetchData(citySuggestion, selectedActivity);
+                    }}
+                  >
+                    <MapPin size={13} style={{ color: 'var(--primary)' }} />
+                    <span>{citySuggestion}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </section>
         )}
@@ -253,9 +237,9 @@ export function App() {
         {/* City Loaded Content */}
         {activeCity && (
           <>
-            {/* Navigation Tabs */}
+            {/* Desktop Navigation Tabs (Hidden on Mobile) */}
             <div className="nav-tabs-wrapper">
-              <nav className="nav-tabs" aria-label="Abas de navegação">
+              <nav className="nav-tabs" aria-label="Abas de navegação desktop">
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'swipe' ? 'active' : ''}`}
@@ -433,6 +417,53 @@ export function App() {
           </>
         )}
       </main>
+
+      {/* Mobile Bottom Navigation Bar (< 768px) */}
+      {activeCity && (
+        <nav className="mobile-bottom-nav" aria-label="Navegação móvel inferior">
+          <button
+            type="button"
+            className={`mobile-nav-item ${activeTab === 'swipe' ? 'active' : ''}`}
+            onClick={() => setActiveTab('swipe')}
+            aria-label="Ir para aba Descoberta"
+          >
+            <Flame size={20} />
+            <span>Descoberta</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-item ${activeTab === 'matches' ? 'active' : ''}`}
+            onClick={() => setActiveTab('matches')}
+            aria-label={`Ir para aba Matches com ${likedPlacesList.length} locais`}
+          >
+            <div className="mobile-nav-icon-wrapper">
+              <Heart size={20} />
+              {likedPlacesList.length > 0 && (
+                <span className="mobile-nav-badge">{likedPlacesList.length}</span>
+              )}
+            </div>
+            <span>Matches</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-item ${activeTab === 'itinerary' ? 'active' : ''}`}
+            onClick={() => setActiveTab('itinerary')}
+            aria-label="Ir para aba Roteiro"
+          >
+            <Map size={20} />
+            <span>Roteiro</span>
+          </button>
+          <button
+            type="button"
+            className={`mobile-nav-item ${activeTab === 'weather' ? 'active' : ''}`}
+            onClick={() => setActiveTab('weather')}
+            aria-label="Ir para aba Previsão de 7 dias"
+          >
+            <Sun size={20} />
+            <span>Previsão</span>
+          </button>
+        </nav>
+      )}
     </div>
   );
 }
