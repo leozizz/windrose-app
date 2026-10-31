@@ -54,7 +54,7 @@ describe('ItineraryView Component', () => {
   it('deve renderizar a capa editorial e o card de QR Code para acesso no celular', () => {
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    expect(screen.getByText(/Windrose Wanderlust • Guia Editorial/i)).toBeDefined();
+    expect(screen.getByText(/Guia de Viagem Personalizado/i)).toBeDefined();
     expect(screen.getByText(/Leve seu guia de viagem no bolso/i)).toBeDefined();
     const qrImg = screen.getByRole('img', { name: /QR Code para roteiro em Florianópolis/i });
     expect(qrImg).toBeDefined();
@@ -66,7 +66,7 @@ describe('ItineraryView Component', () => {
     const qrImg = screen.getByRole('img', { name: /QR Code para roteiro em Florianópolis/i });
     fireEvent.error(qrImg);
 
-    expect(screen.getByText('📱')).toBeDefined();
+    expect(screen.getByTestId('qr-fallback')).toBeDefined();
   });
 
   it('deve invocar o download do arquivo .ics ao clicar no botão de calendário', () => {
@@ -86,7 +86,7 @@ describe('ItineraryView Component', () => {
 
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    const printBtn = screen.getByRole('button', { name: /Baixar PDF Editorial/i });
+    const printBtn = screen.getByRole('button', { name: /Baixar PDF do Roteiro/i });
     fireEvent.click(printBtn);
 
     expect(printSpy).toHaveBeenCalledTimes(1);

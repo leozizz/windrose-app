@@ -5,6 +5,19 @@ import {
   DailyScore,
   PointOfInterest,
 } from '@windrose/shared-types';
+import {
+  Compass,
+  Search,
+  Globe,
+  MapPin,
+  Flame,
+  Heart,
+  Map,
+  Sun,
+  AlertTriangle,
+  Loader2,
+  Sparkles,
+} from 'lucide-react';
 import { apiClient } from '../services/api.client';
 import { useTripSession } from '../hooks/useTripSession';
 import { SwipeDeck } from '../components/SwipeDeck';
@@ -130,29 +143,39 @@ export function App() {
       <header className="app-header">
         <div className="header-container">
           <div className="brand-wrapper">
-            <div className="brand-compass-icon">🧭</div>
+            <div className="brand-compass-icon" aria-hidden="true">
+              <Compass size={22} color="#ffffff" strokeWidth={2.2} />
+            </div>
             <div className="brand-info">
               <h1>Windrose</h1>
-              <span className="brand-badge">Wanderlust 2.0</span>
+              <span className="brand-badge">Roteiros & Clima</span>
             </div>
           </div>
 
           {/* Search Bar */}
           <form onSubmit={handleSearchSubmit} className="header-search-form">
-            <span style={{ marginRight: '0.5rem', opacity: 0.6 }}>🔍</span>
+            <Search size={16} style={{ marginRight: '0.5rem', opacity: 0.6, flexShrink: 0 }} aria-hidden="true" />
             <input
               type="text"
               className="header-search-input"
               value={cityNameInput}
               onChange={(e) => setCityNameInput(e.target.value)}
               placeholder="Digite qualquer cidade (ex: Campinas, Tóquio, Roma)..."
+              aria-label="Buscar cidade ou destino"
             />
             <button
               type="submit"
               className="header-search-btn"
               disabled={loadingWeather}
             >
-              {loadingWeather ? 'Buscando...' : 'Explorar'}
+              {loadingWeather ? (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Loader2 size={14} className="spin-animate" />
+                  <span>Buscando...</span>
+                </span>
+              ) : (
+                'Explorar'
+              )}
             </button>
           </form>
         </div>
@@ -171,8 +194,21 @@ export function App() {
             maxWidth: '680px',
             margin: '3rem auto',
           }}>
-            <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🌍</div>
-            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+              <div style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '50%',
+                background: 'var(--primary-subtle, #ffedd5)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary, #ea580c)',
+              }}>
+                <Globe size={38} strokeWidth={1.8} />
+              </div>
+            </div>
+            <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.02em' }}>
               Para onde você quer viajar?
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '2rem' }}>
@@ -189,13 +225,14 @@ export function App() {
                   key={citySuggestion}
                   type="button"
                   className="action-button-secondary"
-                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem' }}
+                  style={{ fontSize: '0.85rem', padding: '0.4rem 0.9rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                   onClick={() => {
                     setCityNameInput(citySuggestion);
                     fetchData(citySuggestion, selectedActivity);
                   }}
                 >
-                  📍 {citySuggestion}
+                  <MapPin size={12} style={{ color: 'var(--primary)' }} />
+                  <span>{citySuggestion}</span>
                 </button>
               ))}
             </div>
@@ -205,7 +242,9 @@ export function App() {
         {/* Loading Weather state on initial search */}
         {loadingWeather && !ranking && (
           <div className="empty-deck-card">
-            <div className="empty-deck-icon">⏳</div>
+            <div className="empty-deck-icon">
+              <Loader2 size={40} className="spin-animate" style={{ color: 'var(--primary)' }} />
+            </div>
             <h3>Analisando condições climáticas...</h3>
             <p>Conectando às estações meteorológicas e mapeando o destino.</p>
           </div>
@@ -222,14 +261,16 @@ export function App() {
                   className={`nav-tab-btn ${activeTab === 'swipe' ? 'active' : ''}`}
                   onClick={() => setActiveTab('swipe')}
                 >
-                  <span>🔥 Descoberta</span>
+                  <Flame size={16} />
+                  <span>Descoberta</span>
                 </button>
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'matches' ? 'active' : ''}`}
                   onClick={() => setActiveTab('matches')}
                 >
-                  <span>❤️ Matches</span>
+                  <Heart size={16} />
+                  <span>Matches</span>
                   {likedPlacesList.length > 0 && (
                     <span className="nav-badge-count">{likedPlacesList.length}</span>
                   )}
@@ -239,14 +280,16 @@ export function App() {
                   className={`nav-tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
                   onClick={() => setActiveTab('itinerary')}
                 >
-                  <span>🗺️ Roteiro Inteligente</span>
+                  <Map size={16} />
+                  <span>Roteiro</span>
                 </button>
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'weather' ? 'active' : ''}`}
                   onClick={() => setActiveTab('weather')}
                 >
-                  <span>☀️ Previsão 7 Dias</span>
+                  <Sun size={16} />
+                  <span>Previsão 7 Dias</span>
                 </button>
               </nav>
             </div>
@@ -283,7 +326,10 @@ export function App() {
             {/* Errors / Loading Alerts */}
             {weatherError && (
               <div className="empty-deck-card" style={{ borderColor: 'rgba(225, 29, 72, 0.3)' }}>
-                <h3>⚠️ Ocorreu um erro</h3>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#e11d48', marginBottom: '0.5rem' }}>
+                  <AlertTriangle size={20} />
+                  <h3 style={{ margin: 0, color: '#e11d48' }}>Ocorreu um erro</h3>
+                </div>
                 <p>{weatherError}</p>
               </div>
             )}
@@ -293,7 +339,9 @@ export function App() {
               <div>
                 {loadingPlaces ? (
                   <div className="empty-deck-card">
-                    <div className="empty-deck-icon">⏳</div>
+                    <div className="empty-deck-icon">
+                      <Loader2 size={40} className="spin-animate" style={{ color: 'var(--primary)' }} />
+                    </div>
                     <h3>Buscando atrações reais em {activeCity}...</h3>
                     <p>Consultando dados georreferenciados e atrações locais.</p>
                   </div>
@@ -340,7 +388,9 @@ export function App() {
                   />
                 ) : (
                   <div className="empty-deck-card">
-                    <div className="empty-deck-icon">✨</div>
+                    <div className="empty-deck-icon">
+                      <Sparkles size={40} style={{ color: 'var(--primary)' }} />
+                    </div>
                     <h3>Dê Match nos seus pontos favoritos</h3>
                     <p>
                       Para gerar seu roteiro de viagem otimizado para o clima de {activeCity},
