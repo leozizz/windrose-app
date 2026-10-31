@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SwipeDeck } from './SwipeDeck';
 import { PointOfInterest, PoiCategory, PoiEnvironment } from '@windrose/shared-types';
 
@@ -30,6 +30,14 @@ describe('SwipeDeck Component', () => {
       tags: ['Ponte', 'História'],
     },
   ];
+
+  beforeEach(() => {
+    vi.useRealTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
 
   it('deve renderizar o card ativo no topo do deck', () => {
     render(
@@ -88,6 +96,79 @@ describe('SwipeDeck Component', () => {
 
     const rejectButton = screen.getByRole('button', { name: /rejeitar/i });
     fireEvent.click(rejectButton);
+
+    expect(handleSwipe).toHaveBeenCalledTimes(1);
+    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
+  });
+
+  it('deve executar animação de fly-out fluida antes de disparar o callback quando animationDuration > 0', () => {
+    vi.useFakeTimers();
+    const handleSwipe = vi.fn();
+
+    render(
+      <SwipeDeck
+        places={mockPlaces}
+        isSwiped={() => false}
+        onSwipe={handleSwipe}
+        onUndo={vi.fn()}
+        canUndo={false}
+        onViewMatches={vi.fn()}
+        totalLikes={0}
+        animationDuration={300}
+      />
+    );
+
+    const likeButton = screen.getByRole('button', { name: /curtir/i });
+    fireEvent.click(likeButton);
+
+    // O callback ainda não deve ter sido executado imediatamente durante o fly-out
+    expect(handleSwipe).not.toHaveBeenCalled();
+
+    // O card do topo recebe a classe de voo e o botão recebe pulso
+    const card = screen.getByTestId('swipe-card');
+    expect(card.className).toContain('flying-liked');
+    expect(likeButton.className).toContain('btn-pulse-like');
+
+    // Ao avançar o timer dos 300ms, a animação conclui e dispara o callback
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+
+    expect(handleSwipe).toHaveBeenCalledTimes(1);
+    expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
+  });
+
+  it('deve desabilitar botões durante a animação de fly-out para evitar múltiplos cliques acidentais', () => {
+    vi.useFakeTimers();
+    const handleSwipe = vi.fn();
+
+    render(
+      <SwipeDeck
+        places={mockPlaces}
+        isSwiped={() => false}
+        onSwipe={handleSwipe}
+        onUndo={vi.fn()}
+        canUndo={true}
+        onViewMatches={vi.fn()}
+        totalLikes={0}
+        animationDuration={300}
+      />
+    );
+
+    const rejectButton = screen.getByRole('button', { name: /rejeitar/i });
+    const likeButton = screen.getByRole('button', { name: /curtir/i });
+    const undoButton = screen.getByRole('button', { name: /desfazer/i });
+
+    fireEvent.click(rejectButton);
+
+    // Botões devem estar desabilitados durante a animação
+    expect(rejectButton).toHaveProperty('disabled', true);
+    expect(likeButton).toHaveProperty('disabled', true);
+    expect(undoButton).toHaveProperty('disabled', true);
+
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
 
     expect(handleSwipe).toHaveBeenCalledTimes(1);
     expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
