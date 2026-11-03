@@ -1,4 +1,5 @@
 import { PointOfInterest, PoiCategory, PoiEnvironment } from '@windrose/shared-types';
+import { PhotoPoolService } from './photo-pool.service';
 
 interface NominatimPlace {
   place_id: number;
@@ -156,7 +157,7 @@ export class NominatimClient {
       longitude: parseFloat(item.lon),
       city,
       description: `${friendlyCategoryName} situado em ${city}.`,
-      imageUrl: this.getDefaultCategoryPhoto(category),
+      imageUrl: PhotoPoolService.getDeterministicPhoto(category, `${name}-${city}`),
       tags: [friendlyCategoryName, 'Ponto de Interesse'],
       address: formattedAddress,
     };

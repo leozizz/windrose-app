@@ -1,4 +1,5 @@
 import { PointOfInterest, PoiCategory, PoiEnvironment } from '@windrose/shared-types';
+import { PhotoPoolService } from './photo-pool.service';
 
 interface OverpassElement {
   id: number;
@@ -106,7 +107,7 @@ export class OverpassClient {
       tagList.push(this.getFriendlyCategoryName(category));
     }
 
-    const imageUrl = this.getDefaultCategoryPhoto(category);
+    const imageUrl = PhotoPoolService.getDeterministicPhoto(category, `${name}-${city}`);
     const friendlyCategoryName = this.getFriendlyCategoryName(category);
 
     return {

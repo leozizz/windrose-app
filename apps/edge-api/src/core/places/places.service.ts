@@ -2,6 +2,7 @@ import { PointOfInterest } from '@windrose/shared-types';
 import { OverpassClient } from '../../infrastructure/places/overpass.client';
 import { NominatimClient } from '../../infrastructure/places/nominatim.client';
 import { WikimediaClient } from '../../infrastructure/places/wikimedia.client';
+import { PhotoPoolService } from '../../infrastructure/places/photo-pool.service';
 import {
   CURATED_CITY_POIS,
   generateGenericCityPois,
@@ -63,7 +64,7 @@ export class PlacesService {
       combined.push(...generateGenericCityPois(city, lat, lon));
     }
 
-    // 5. Enrich top attractions with Wikimedia if image is generic Unsplash
+    // 5. Enrich top attractions with Wikimedia Search API & Thematic Photo Pool
     const enriched = await Promise.all(
       combined.slice(0, limit).map(async (poi) => {
         // Sanitize any residual UPPERCASE category in tags
@@ -78,18 +79,28 @@ export class PlacesService {
           return t;
         });
 
-        if (poi.imageUrl && !poi.imageUrl.includes('unsplash.com')) {
+        // If the POI already has a verified, non-placeholder custom image (e.g. curated), keep it
+        const isGeneric = PhotoPoolService.isGenericPlaceholder(poi.imageUrl);
+        if (poi.imageUrl && !isGeneric && !poi.imageUrl.includes('photo-fallback')) {
           return {
             ...poi,
             tags: cleanTags,
           };
         }
 
-        const wiki = await WikimediaClient.enrichPlace(poi.name);
+        // Search Wikimedia for an authentic encyclopedic photo and editorial extract
+        const wiki = await WikimediaClient.enrichPlace(poi.name, city);
+
+        // Fallback to high-resolution deterministic thematic photo pool if Wikimedia lacks image
+        const finalImageUrl =
+          wiki.imageUrl ||
+          poi.imageUrl ||
+          PhotoPoolService.getDeterministicPhoto(poi.category, `${poi.name}-${city}`);
+
         return {
           ...poi,
           description: wiki.summary || poi.description,
-          imageUrl: wiki.imageUrl || poi.imageUrl,
+          imageUrl: finalImageUrl,
           tags: cleanTags,
         };
       })
