@@ -133,4 +133,34 @@ describe('PlacesService Domain Logic', () => {
     expect(museu?.description).toBe('Resumo oficial da Wikipedia sobre o museu.');
     expect(museu?.imageUrl).toBe('https://upload.wikimedia.org/museum.jpg');
   });
+
+  it('deve recorrer ao pool temático determinístico quando Wikimedia não possuir foto', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([
+      {
+        id: 'osm-praia-rara',
+        name: 'Praia Remota Secreta',
+        category: PoiCategory.BEACH,
+        environment: PoiEnvironment.OUTDOOR,
+        latitude: -23.1,
+        longitude: -44.2,
+        city: 'Paraty',
+        description: 'Praia isolada',
+        imageUrl: undefined as unknown as string,
+        tags: ['Praia'],
+      },
+    ]);
+
+    vi.spyOn(WikimediaClient, 'enrichPlace').mockResolvedValueOnce({
+      summary: undefined,
+      imageUrl: undefined,
+    });
+
+    const deck = await PlacesService.getDeckForCity('Paraty', -23.1, -44.2);
+    const praia = deck.find((p) => p.name === 'Praia Remota Secreta');
+
+    expect(praia).toBeDefined();
+    expect(praia?.imageUrl).toBeDefined();
+    expect(praia?.imageUrl).toContain('images.unsplash.com');
+  });
 });
