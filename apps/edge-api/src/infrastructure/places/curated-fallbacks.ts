@@ -1,4 +1,5 @@
 import { PointOfInterest, PoiCategory, PoiEnvironment } from '@windrose/shared-types';
+import { PhotoPoolService } from './photo-pool.service';
 
 /**
  * High-quality curated fallbacks with verified imagery for popular cities
@@ -119,7 +120,7 @@ export function generateGenericCityPois(city: string, lat: number, lon: number):
       longitude: lon + 0.01,
       city,
       description: `Área verde e mirante panorâmico para contemplar o horizonte e caminhar ao ar livre em ${city}.`,
-      imageUrl: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=800&q=80',
+      imageUrl: PhotoPoolService.getDeterministicPhoto(PoiCategory.PARK, `${city}-1`),
       tags: ['Parque', 'Mirante', 'Natureza'],
     },
     {
@@ -131,7 +132,7 @@ export function generateGenericCityPois(city: string, lat: number, lon: number):
       longitude: lon - 0.005,
       city,
       description: `Exposições culturais e memorial que resgatam as raízes e a arte contemporânea da região de ${city}.`,
-      imageUrl: 'https://images.unsplash.com/photo-1566127444979-b3d2b654e3d7?auto=format&fit=crop&w=800&q=80',
+      imageUrl: PhotoPoolService.getDeterministicPhoto(PoiCategory.MUSEUM, `${city}-2`),
       tags: ['Museu', 'Arte', 'Indoor'],
     },
     {
@@ -143,7 +144,7 @@ export function generateGenericCityPois(city: string, lat: number, lon: number):
       longitude: lon - 0.003,
       city,
       description: `Polo gastronômico com restaurantes locais e sabores autênticos tradicionais de ${city}.`,
-      imageUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80',
+      imageUrl: PhotoPoolService.getDeterministicPhoto(PoiCategory.RESTAURANT, `${city}-3`),
       tags: ['Gastronomia', 'Culinária Local', 'Restaurante'],
     },
     {
@@ -155,7 +156,7 @@ export function generateGenericCityPois(city: string, lat: number, lon: number):
       longitude: lon + 0.004,
       city,
       description: `Área boêmia vibrante com coquetéis autorais, petiscos e entretenimento noturno em ${city}.`,
-      imageUrl: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&w=800&q=80',
+      imageUrl: PhotoPoolService.getDeterministicPhoto(PoiCategory.BAR, `${city}-4`),
       tags: ['Bar', 'Noite', 'Coquetéis'],
     },
     {
@@ -167,7 +168,7 @@ export function generateGenericCityPois(city: string, lat: number, lon: number):
       longitude: lon,
       city,
       description: `Coração histórico da cidade com arquitetura preservada e praça convidativa para fotos.`,
-      imageUrl: 'https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?auto=format&fit=crop&w=800&q=80',
+      imageUrl: PhotoPoolService.getDeterministicPhoto(PoiCategory.ATTRACTION, `${city}-5`),
       tags: ['Monumento', 'História', 'Turismo'],
     },
   ];
