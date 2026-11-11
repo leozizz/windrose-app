@@ -16,6 +16,10 @@ interface SwipeDeckProps {
    * Em ambiente de teste automatizado sem timers artificiais, o padrão é 0 para respostas instantâneas.
    */
   animationDuration?: number;
+  /**
+   * Callback opcional para propagar mensagens de acessibilidade a leitores de tela.
+   */
+  onAnnounce?: (message: string) => void;
 }
 
 interface FlyOutState {
@@ -33,11 +37,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   onViewMatches,
   totalLikes,
   animationDuration = typeof process !== 'undefined' && process.env.NODE_ENV === 'test' ? 0 : 340,
+  onAnnounce,
 }) => {
   const remainingPlaces = places.filter((p) => !isSwiped(p.id));
   const currentCard = remainingPlaces[0];
   const nextCard = remainingPlaces[1];
   const thirdCard = remainingPlaces[2];
+
+  // A11y live region state
+  const [announcement, setAnnouncement] = useState<string>('');
 
   // Drag interaction physics
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -59,9 +67,28 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     };
   }, []);
 
+  const handleUndo = useCallback(() => {
+    if (!canUndo || isAnimating) return;
+    const msg = 'Última decisão desfeita.';
+    setAnnouncement(msg);
+    onAnnounce?.(msg);
+    onUndo();
+  }, [canUndo, isAnimating, onAnnounce, onUndo]);
+
   const triggerSwipe = useCallback(
     (action: 'liked' | 'rejected') => {
       if (isAnimating || !currentCard) return;
+
+      const actionText = action === 'liked' ? 'curtiu' : 'rejeitou';
+      const remainingCount = remainingPlaces.length - 1;
+      const nextCardName = remainingPlaces[1]?.name;
+      const msg = `Você ${actionText} ${currentCard.name}. ${
+        remainingCount > 0 && nextCardName
+          ? `Próximo: ${nextCardName}. Restam ${remainingCount} ${remainingCount === 1 ? 'local' : 'locais'}.`
+          : 'Você explorou todos os locais!'
+      }`;
+      setAnnouncement(msg);
+      onAnnounce?.(msg);
 
       setIsAnimating(true);
       setActiveButton(action);
@@ -90,7 +117,16 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         setDragOffset({ x: 0, y: 0 });
       }, animationDuration);
     },
-    [isAnimating, currentCard, dragOffset.x, dragOffset.y, onSwipe, animationDuration]
+    [
+      isAnimating,
+      currentCard,
+      remainingPlaces,
+      onAnnounce,
+      dragOffset.x,
+      dragOffset.y,
+      animationDuration,
+      onSwipe,
+    ]
   );
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
@@ -171,13 +207,13 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         canUndo
       ) {
         e.preventDefault();
-        onUndo();
+        handleUndo();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentCard, isAnimating, triggerSwipe, canUndo, onUndo]);
+  }, [currentCard, isAnimating, triggerSwipe, canUndo, handleUndo]);
 
   if (!currentCard) {
     return (
@@ -202,7 +238,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               <button
                 type="button"
                 className="action-button-secondary"
-                onClick={onUndo}
+                onClick={handleUndo}
                 data-testid="btn-empty-undo"
               >
                 <RotateCcw size={15} />
@@ -351,7 +387,8 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       data-testid="swipe-deck-container"
     >
       <div className="sr-only" aria-live="polite" data-testid="swipe-live-region">
-        {`Local ${currentCard.name}, categoria ${formatCategory(currentCard.category)}. Use seta direita para curtir ou seta esquerda para passar.`}
+        {announcement ||
+          `Local ${currentCard.name}, categoria ${formatCategory(currentCard.category)}. Use seta direita para curtir ou seta esquerda para passar.`}
       </div>
 
       <div className="cards-stack-area">
@@ -438,7 +475,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         <button
           type="button"
           className="action-circle-btn btn-undo"
-          onClick={onUndo}
+          onClick={handleUndo}
           disabled={!canUndo || isAnimating}
           title="Desfazer última decisão (Seta Cima ou Z)"
           aria-label="Desfazer"

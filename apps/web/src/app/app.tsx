@@ -24,6 +24,7 @@ import { SwipeDeck } from '../components/SwipeDeck';
 import { MatchesList } from '../components/MatchesList';
 import { ItineraryView } from '../components/ItineraryView';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
+import { A11yAnnouncer } from '../components/A11yAnnouncer';
 import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
 import { formatActivity, formatRecommendation } from '../utils/labels';
 
@@ -36,6 +37,7 @@ export const App: React.FC = () => {
     ActivityType.OUTDOOR_SIGHTSEEING
   );
   const [activeTab, setActiveTab] = useState<ActiveTab>('swipe');
+  const [a11yFeedbackMessage, setA11yFeedbackMessage] = useState<string>('');
 
   // Weather state
   const [ranking, setRanking] = useState<ActivityRankingResult | null>(null);
@@ -59,6 +61,7 @@ export const App: React.FC = () => {
       setWeatherError(null);
       setLoadingPlaces(true);
       setPlacesError(null);
+      setA11yFeedbackMessage(`Buscando previsão do tempo e atrações em ${cleanCity}...`);
 
       try {
         const rankingResult = await apiClient.getRanking(cleanCity, activity);
@@ -81,25 +84,44 @@ export const App: React.FC = () => {
         try {
           const deckResult = await apiClient.getPlacesDeck(locationName, lat, lon, 25);
           setPlaces(deckResult.deck || []);
+          setA11yFeedbackMessage(
+            `Destino ${locationName} carregado com sucesso. ${deckResult.deck?.length || 0} atrações disponíveis.`
+          );
         } catch (poiErr) {
-          setPlacesError(
+          const poiErrMsg =
             poiErr instanceof Error
               ? poiErr.message
-              : 'Não foi possível carregar os locais de interesse.'
-          );
+              : 'Não foi possível carregar os locais de interesse.';
+          setPlacesError(poiErrMsg);
+          setA11yFeedbackMessage(`Aviso de locais: ${poiErrMsg}`);
         }
       } catch (err) {
-        setWeatherError(
+        const errMsg =
           err instanceof Error
             ? err.message
-            : 'Erro ao buscar dados meteorológicos da cidade.'
-        );
+            : 'Erro ao buscar dados meteorológicos da cidade.';
+        setWeatherError(errMsg);
+        setA11yFeedbackMessage(`Erro de busca: ${errMsg}`);
       } finally {
         setLoadingWeather(false);
         setLoadingPlaces(false);
       }
     },
     []
+  );
+
+  const handleTabChange = useCallback(
+    (newTab: ActiveTab) => {
+      setActiveTab(newTab);
+      const tabNames: Record<ActiveTab, string> = {
+        swipe: 'Descoberta',
+        matches: `Matches com ${session.likedPlaces.length} locais`,
+        itinerary: 'Roteiro inteligente',
+        weather: 'Previsão do tempo para 7 dias',
+      };
+      setA11yFeedbackMessage(`Navegando para aba ${tabNames[newTab]}.`);
+    },
+    [session.likedPlaces.length]
   );
 
   useEffect(() => {
@@ -140,6 +162,14 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-root">
+      {/* Skip Link para Acessibilidade de Teclado (WCAG 2.4.1) */}
+      <a href="#main-content" className="skip-link" data-testid="skip-link">
+        Pular para o conteúdo principal
+      </a>
+
+      {/* Região Viva Global para Leitores de Tela */}
+      <A11yAnnouncer message={a11yFeedbackMessage} />
+
       {/* Modern Glassmorphic App Header */}
       <header className="app-header">
         <div className="header-container">
@@ -188,7 +218,7 @@ export const App: React.FC = () => {
       {/* PWA Install Prompt Banner */}
       <PwaInstallPrompt />
 
-      <main className="container">
+      <main id="main-content" tabIndex={-1} className="container">
         {/* Empty State / Welcome Screen when no city is searched yet */}
         {!activeCity && !loadingWeather && (
           <section className="welcome-hero-card">
@@ -220,7 +250,7 @@ export const App: React.FC = () => {
                       fetchData(citySuggestion, selectedActivity);
                     }}
                   >
-                    <MapPin size={13} style={{ color: 'var(--primary)' }} />
+                    <MapPin size={13} className="suggestion-pin-icon" />
                     <span>{citySuggestion}</span>
                   </button>
                 ))}
@@ -233,7 +263,7 @@ export const App: React.FC = () => {
         {loadingWeather && !ranking && (
           <div className="empty-deck-card">
             <div className="empty-deck-icon">
-              <Loader2 size={40} className="spin-animate" style={{ color: 'var(--primary)' }} />
+              <Loader2 size={40} className="spin-animate weather-loader-icon" />
             </div>
             <h3>Analisando condições climáticas...</h3>
             <p>Conectando às estações meteorológicas e mapeando o destino.</p>
@@ -249,7 +279,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'swipe' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('swipe')}
+                  onClick={() => handleTabChange('swipe')}
                   data-testid="tab-swipe"
                 >
                   <Flame size={16} />
@@ -258,7 +288,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'matches' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('matches')}
+                  onClick={() => handleTabChange('matches')}
                   data-testid="tab-matches"
                 >
                   <Heart size={16} />
@@ -270,7 +300,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('itinerary')}
+                  onClick={() => handleTabChange('itinerary')}
                   data-testid="tab-itinerary"
                 >
                   <Map size={16} />
@@ -279,7 +309,7 @@ export const App: React.FC = () => {
                 <button
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'weather' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('weather')}
+                  onClick={() => handleTabChange('weather')}
                   data-testid="tab-weather"
                 >
                   <Sun size={16} />
@@ -319,10 +349,10 @@ export const App: React.FC = () => {
 
             {/* Errors / Loading Alerts */}
             {weatherError && (
-              <div className="empty-deck-card" style={{ borderColor: 'rgba(225, 29, 72, 0.3)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', color: '#e11d48', marginBottom: '0.5rem' }}>
+              <div className="empty-deck-card error-deck-card">
+                <div className="error-deck-header">
                   <AlertTriangle size={20} />
-                  <h3 style={{ margin: 0, color: '#e11d48' }}>Ocorreu um erro</h3>
+                  <h3 className="error-deck-title">Ocorreu um erro</h3>
                 </div>
                 <p>{weatherError}</p>
               </div>
@@ -334,7 +364,7 @@ export const App: React.FC = () => {
                 {loadingPlaces ? (
                   <div className="empty-deck-card">
                     <div className="empty-deck-icon">
-                      <Loader2 size={40} className="spin-animate" style={{ color: 'var(--primary)' }} />
+                      <Loader2 size={40} className="spin-animate weather-loader-icon" />
                     </div>
                     <h3>Buscando atrações reais em {activeCity}...</h3>
                     <p>Consultando dados georreferenciados e atrações locais.</p>
@@ -354,8 +384,9 @@ export const App: React.FC = () => {
                     }}
                     onUndo={session.undoLastAction}
                     canUndo={session.canUndo}
-                    onViewMatches={() => setActiveTab('matches')}
+                    onViewMatches={() => handleTabChange('matches')}
                     totalLikes={likedPlacesList.length}
+                    onAnnounce={setA11yFeedbackMessage}
                   />
                 )}
               </div>
@@ -366,9 +397,9 @@ export const App: React.FC = () => {
               <MatchesList
                 city={activeCity}
                 matches={likedPlacesList}
-                onBackToSwipe={() => setActiveTab('swipe')}
+                onBackToSwipe={() => handleTabChange('swipe')}
                 onClearMatches={session.clearCitySession}
-                onGenerateItinerary={() => setActiveTab('itinerary')}
+                onGenerateItinerary={() => handleTabChange('itinerary')}
               />
             )}
 
@@ -378,12 +409,12 @@ export const App: React.FC = () => {
                 {generatedItinerary ? (
                   <ItineraryView
                     itinerary={generatedItinerary}
-                    onBackToSwipe={() => setActiveTab('swipe')}
+                    onBackToSwipe={() => handleTabChange('swipe')}
                   />
                 ) : (
                   <div className="empty-deck-card">
                     <div className="empty-deck-icon">
-                      <Sparkles size={40} style={{ color: 'var(--primary)' }} />
+                      <Sparkles size={40} className="empty-sparkles-icon" />
                     </div>
                     <h3>Dê Match nos seus pontos favoritos</h3>
                     <p>
@@ -393,7 +424,7 @@ export const App: React.FC = () => {
                     <button
                       type="button"
                       className="action-button-primary"
-                      onClick={() => setActiveTab('swipe')}
+                      onClick={() => handleTabChange('swipe')}
                     >
                       Ir para Descoberta →
                     </button>
@@ -406,15 +437,15 @@ export const App: React.FC = () => {
             {activeTab === 'weather' && ranking && (
               <div className="matches-grid">
                 {dailyScoresList.map((day) => (
-                  <div key={day.date} className="match-card" style={{ padding: '1.5rem' }}>
-                    <span className={`suitability-badge ${day.recommendationLevel}`} style={{ alignSelf: 'flex-start', marginBottom: '0.75rem' }}>
+                  <div key={day.date} className="match-card weather-forecast-card">
+                    <span className={`suitability-badge ${day.recommendationLevel} weather-forecast-badge`}>
                       {formatRecommendation(day.recommendationLevel)} • {day.score}/100
                     </span>
-                    <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                    <h3 className="weather-forecast-date">
                       {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
                     </h3>
                     {day.reasons && day.reasons.length > 0 && (
-                      <ul style={{ paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      <ul className="weather-forecast-reasons">
                         {day.reasons.map((r, i) => (
                           <li key={i}>{r}</li>
                         ))}
@@ -434,7 +465,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             className={`mobile-nav-item ${activeTab === 'swipe' ? 'active' : ''}`}
-            onClick={() => setActiveTab('swipe')}
+            onClick={() => handleTabChange('swipe')}
             aria-label="Ir para aba Descoberta"
             data-testid="mobile-tab-swipe"
           >
@@ -444,7 +475,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             className={`mobile-nav-item ${activeTab === 'matches' ? 'active' : ''}`}
-            onClick={() => setActiveTab('matches')}
+            onClick={() => handleTabChange('matches')}
             aria-label={`Ir para aba Matches com ${likedPlacesList.length} locais`}
             data-testid="mobile-tab-matches"
           >
@@ -459,7 +490,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             className={`mobile-nav-item ${activeTab === 'itinerary' ? 'active' : ''}`}
-            onClick={() => setActiveTab('itinerary')}
+            onClick={() => handleTabChange('itinerary')}
             aria-label="Ir para aba Roteiro"
             data-testid="mobile-tab-itinerary"
           >
@@ -469,7 +500,7 @@ export const App: React.FC = () => {
           <button
             type="button"
             className={`mobile-nav-item ${activeTab === 'weather' ? 'active' : ''}`}
-            onClick={() => setActiveTab('weather')}
+            onClick={() => handleTabChange('weather')}
             aria-label="Ir para aba Previsão de 7 dias"
             data-testid="mobile-tab-weather"
           >
@@ -480,5 +511,6 @@ export const App: React.FC = () => {
       )}
     </div>
   );
-}
+};
+
 export default App;

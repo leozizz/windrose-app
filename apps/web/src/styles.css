@@ -18,7 +18,7 @@
   
   --text-main: #0f172a;
   --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-muted: #64748b;
   --text-inverse: #ffffff;
   
   --primary: #f97316;
@@ -74,9 +74,32 @@ body {
   position: relative;
 }
 
+/* Skip Link para Usuários de Teclado (WCAG 2.4.1) */
+.skip-link {
+  position: absolute;
+  top: -60px;
+  left: 1rem;
+  background: var(--primary);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  z-index: 9999;
+  transition: top 0.2s ease;
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: 1rem;
+  outline: 3px solid var(--secondary);
+  outline-offset: 2px;
+}
+
 button:focus-visible,
 a:focus-visible,
-input:focus-visible {
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -2215,5 +2238,69 @@ h1, h2, h3, h4, h5, h6 {
   .pwa-install-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+}
+
+/* Classes de Higienização de Estilos Inline (Constituição AGENTS.md) */
+.suggestion-pin-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.weather-loader-icon {
+  color: var(--primary);
+}
+
+.empty-sparkles-icon {
+  color: var(--primary);
+}
+
+.error-deck-card {
+  border-color: rgba(225, 29, 72, 0.3);
+}
+
+.error-deck-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--accent-reject);
+  margin-bottom: 0.5rem;
+}
+
+.error-deck-title {
+  margin: 0;
+  color: var(--accent-reject);
+}
+
+.weather-forecast-card {
+  padding: 1.5rem;
+}
+
+.weather-forecast-badge {
+  align-self: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.weather-forecast-date {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.weather-forecast-reasons {
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Acessibilidade: Suporte a Redução de Movimento (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
   }
 }

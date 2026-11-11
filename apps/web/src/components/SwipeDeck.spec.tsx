@@ -320,5 +320,42 @@ describe('SwipeDeck Component', () => {
 
       expect(handleSwipe).not.toHaveBeenCalled();
     });
+
+    it('deve emitir anúncio acessível via onAnnounce ao acionar curtir, rejeitar ou desfazer', () => {
+      const handleAnnounce = vi.fn();
+      const handleUndo = vi.fn();
+
+      const { rerender } = render(
+        <SwipeDeck
+          places={mockPlaces}
+          isSwiped={() => false}
+          onSwipe={vi.fn()}
+          onUndo={handleUndo}
+          canUndo={true}
+          onViewMatches={vi.fn()}
+          totalLikes={0}
+          animationDuration={0}
+          onAnnounce={handleAnnounce}
+        />
+      );
+
+      // Seta Direita -> Curtir
+      fireEvent.keyDown(window, { key: 'ArrowRight', code: 'ArrowRight' });
+      expect(handleAnnounce).toHaveBeenCalledWith(
+        expect.stringMatching(/você curtiu praia da joaquina/i)
+      );
+
+      // Seta Esquerda -> Rejeitar
+      fireEvent.keyDown(window, { key: 'ArrowLeft', code: 'ArrowLeft' });
+      expect(handleAnnounce).toHaveBeenCalledWith(
+        expect.stringMatching(/você rejeitou praia da joaquina/i)
+      );
+
+      // Seta Cima -> Desfazer
+      fireEvent.keyDown(window, { key: 'ArrowUp', code: 'ArrowUp' });
+      expect(handleAnnounce).toHaveBeenCalledWith(
+        expect.stringMatching(/última decisão desfeita/i)
+      );
+    });
   });
 });
