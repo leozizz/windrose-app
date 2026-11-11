@@ -141,7 +141,7 @@ export const runCodeReview = async (userOptions = {}) => {
         taskTitle = parsed.title;
         const lines = parsed.body.split('\n');
         for (const l of lines) {
-          const itemMatch = l.trim().match(/^(?:(?:\d+\.|\-|\*|\[\s*\])\s+)(.+)$/);
+          const itemMatch = l.trim().match(/^(?:(?:\d+\.|-|\*|\[\s*\])\s+)(.+)$/);
           if (itemMatch && itemMatch[1].length > 5) {
             requirements.push({ text: itemMatch[1].trim() });
           }

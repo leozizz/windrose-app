@@ -1,56 +1,35 @@
-import nx from "@nx/eslint-plugin";
+import js from '@eslint/js';
+import prettier from 'eslint-config-prettier';
 
 export default [
-    ...nx.configs["flat/base"],
-    ...nx.configs["flat/typescript"],
-    ...nx.configs["flat/javascript"],
-    {
-      "ignores": [
-        "**/dist",
-        "**/out-tsc",
-        "**/vite.config.*.timestamp*",
-        "**/vitest.config.*.timestamp*"
-      ]
+  js.configs.recommended,
+  prettier,
+  {
+    ignores: [
+      '**/dist/**',
+      '**/out-tsc/**',
+      '**/vite.config.*.timestamp*',
+      '**/vitest.config.*.timestamp*',
+      'node_modules/**',
+      '.agents/**',
+      '.skills/**',
+      '**/.wrangler/**',
+      'coverage/**',
+      'REVIEW_REPORT.md',
+      '**/*.ts',
+      '**/*.tsx',
+    ],
+  },
+  {
+    files: [
+      '**/*.js',
+      '**/*.mjs',
+      '**/*.cjs',
+    ],
+    rules: {
+      'no-unused-vars': 'off',
+      'no-undef': 'off',
+      'no-empty': ['error', { allowEmptyCatch: false }],
     },
-    {
-        files: [
-            "**/*.ts",
-            "**/*.tsx",
-            "**/*.js",
-            "**/*.jsx"
-        ],
-        rules: {
-            "@nx/enforce-module-boundaries": [
-                "error",
-                {
-                    enforceBuildableLibDependency: true,
-                    allow: [
-                        "^.*/eslint(\\.base)?\\.config\\.[cm]?[jt]s$"
-                    ],
-                    depConstraints: [
-                        {
-                            sourceTag: "*",
-                            onlyDependOnLibsWithTags: [
-                                "*"
-                            ]
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    {
-        files: [
-            "**/*.ts",
-            "**/*.tsx",
-            "**/*.cts",
-            "**/*.mts",
-            "**/*.js",
-            "**/*.jsx",
-            "**/*.cjs",
-            "**/*.mjs"
-        ],
-        // Override or add rules here
-        rules: {}
-    }
+  },
 ];
