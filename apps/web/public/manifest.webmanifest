@@ -1,0 +1,33 @@
+{
+  "name": "Windrose • Roteiros Inteligentes",
+  "short_name": "Windrose",
+  "description": "Planejador de viagens inteligente adaptado às condições climáticas em tempo real com descoberta estilo Tinder.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfbf9",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["travel", "navigation", "weather", "lifestyle"],
+  "lang": "pt-BR",
+  "dir": "ltr"
+}

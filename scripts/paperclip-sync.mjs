@@ -12,7 +12,8 @@
 import { execSync } from 'node:child_process';
 
 const GITHUB_REPO = 'leozizz/windrose-app';
-const PAPERCLIP_API = process.env.PAPERCLIP_API_URL || 'http://127.0.0.1:3100/api';
+const rawApiUrl = process.env.PAPERCLIP_API_URL || 'http://127.0.0.1:3100/api';
+const PAPERCLIP_API = rawApiUrl.endsWith('/api') ? rawApiUrl : `${rawApiUrl.replace(/\/$/, '')}/api`;
 const COMPANY_ID = '7cc4de9e-1eb0-44ea-8d5b-43d3d0d91655';
 const PROJECT_ID = '7e340278-e6dd-4fcd-b1e5-578d569e1d12';
 

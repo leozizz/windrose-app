@@ -23,12 +23,13 @@ import { useTripSession } from '../hooks/useTripSession';
 import { SwipeDeck } from '../components/SwipeDeck';
 import { MatchesList } from '../components/MatchesList';
 import { ItineraryView } from '../components/ItineraryView';
+import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
 import { formatActivity, formatRecommendation } from '../utils/labels';
 
 type ActiveTab = 'swipe' | 'matches' | 'itinerary' | 'weather';
 
-export function App() {
+export const App: React.FC = () => {
   const [cityNameInput, setCityNameInput] = useState<string>('');
   const [activeCity, setActiveCity] = useState<string>('');
   const [selectedActivity, setSelectedActivity] = useState<ActivityType>(
@@ -154,7 +155,7 @@ export function App() {
 
           {/* Search Bar */}
           <form onSubmit={handleSearchSubmit} className="header-search-form" role="search">
-            <Search size={16} style={{ marginRight: '0.5rem', opacity: 0.6, flexShrink: 0 }} aria-hidden="true" />
+            <Search size={16} className="search-input-icon" aria-hidden="true" />
             <input
               type="text"
               className="header-search-input"
@@ -162,15 +163,17 @@ export function App() {
               onChange={(e) => setCityNameInput(e.target.value)}
               placeholder="Digite qualquer cidade (ex: Campinas, Tóquio, Roma)..."
               aria-label="Buscar cidade ou destino"
+              data-testid="header-search-input"
             />
             <button
               type="submit"
               className="header-search-btn"
               disabled={loadingWeather}
               aria-label="Explorar cidade"
+              data-testid="header-search-btn"
             >
               {loadingWeather ? (
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span className="search-btn-loading">
                   <Loader2 size={14} className="spin-animate" />
                   <span>Buscando...</span>
                 </span>
@@ -181,6 +184,9 @@ export function App() {
           </form>
         </div>
       </header>
+
+      {/* PWA Install Prompt Banner */}
+      <PwaInstallPrompt />
 
       <main className="container">
         {/* Empty State / Welcome Screen when no city is searched yet */}
@@ -244,6 +250,7 @@ export function App() {
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'swipe' ? 'active' : ''}`}
                   onClick={() => setActiveTab('swipe')}
+                  data-testid="tab-swipe"
                 >
                   <Flame size={16} />
                   <span>Descoberta</span>
@@ -252,6 +259,7 @@ export function App() {
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'matches' ? 'active' : ''}`}
                   onClick={() => setActiveTab('matches')}
+                  data-testid="tab-matches"
                 >
                   <Heart size={16} />
                   <span>Matches</span>
@@ -263,6 +271,7 @@ export function App() {
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'itinerary' ? 'active' : ''}`}
                   onClick={() => setActiveTab('itinerary')}
+                  data-testid="tab-itinerary"
                 >
                   <Map size={16} />
                   <span>Roteiro</span>
@@ -271,6 +280,7 @@ export function App() {
                   type="button"
                   className={`nav-tab-btn ${activeTab === 'weather' ? 'active' : ''}`}
                   onClick={() => setActiveTab('weather')}
+                  data-testid="tab-weather"
                 >
                   <Sun size={16} />
                   <span>Previsão 7 Dias</span>
@@ -426,6 +436,7 @@ export function App() {
             className={`mobile-nav-item ${activeTab === 'swipe' ? 'active' : ''}`}
             onClick={() => setActiveTab('swipe')}
             aria-label="Ir para aba Descoberta"
+            data-testid="mobile-tab-swipe"
           >
             <Flame size={20} />
             <span>Descoberta</span>
@@ -435,6 +446,7 @@ export function App() {
             className={`mobile-nav-item ${activeTab === 'matches' ? 'active' : ''}`}
             onClick={() => setActiveTab('matches')}
             aria-label={`Ir para aba Matches com ${likedPlacesList.length} locais`}
+            data-testid="mobile-tab-matches"
           >
             <div className="mobile-nav-icon-wrapper">
               <Heart size={20} />
@@ -449,6 +461,7 @@ export function App() {
             className={`mobile-nav-item ${activeTab === 'itinerary' ? 'active' : ''}`}
             onClick={() => setActiveTab('itinerary')}
             aria-label="Ir para aba Roteiro"
+            data-testid="mobile-tab-itinerary"
           >
             <Map size={20} />
             <span>Roteiro</span>
@@ -458,6 +471,7 @@ export function App() {
             className={`mobile-nav-item ${activeTab === 'weather' ? 'active' : ''}`}
             onClick={() => setActiveTab('weather')}
             aria-label="Ir para aba Previsão de 7 dias"
+            data-testid="mobile-tab-weather"
           >
             <Sun size={20} />
             <span>Previsão</span>

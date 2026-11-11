@@ -208,4 +208,117 @@ describe('SwipeDeck Component', () => {
     expect(screen.getByText(/você explorou todos os locais/i)).toBeDefined();
     expect(screen.getByText(/ver 2 matches/i)).toBeDefined();
   });
+
+  describe('Acessibilidade e Atalhos de Teclado (WCAG 2.2 AA)', () => {
+    it('deve conter atributos de acessibilidade ARIA e região aria-live informativa', () => {
+      render(
+        <SwipeDeck
+          places={mockPlaces}
+          isSwiped={() => false}
+          onSwipe={vi.fn()}
+          onUndo={vi.fn()}
+          canUndo={false}
+          onViewMatches={vi.fn()}
+          totalLikes={0}
+        />
+      );
+
+      const region = screen.getByRole('region', { name: /descoberta de locais/i });
+      expect(region).toBeDefined();
+      expect(region.getAttribute('aria-roledescription')).toBe('carrossel de descoberta interativo');
+
+      const liveRegion = screen.getByTestId('swipe-live-region');
+      expect(liveRegion.getAttribute('aria-live')).toBe('polite');
+      expect(liveRegion.textContent).toContain('Praia da Joaquina');
+    });
+
+    it('deve possuir data-testid em todos os botões e controles de ação interativos', () => {
+      render(
+        <SwipeDeck
+          places={mockPlaces}
+          isSwiped={() => false}
+          onSwipe={vi.fn()}
+          onUndo={vi.fn()}
+          canUndo={true}
+          onViewMatches={vi.fn()}
+          totalLikes={3}
+        />
+      );
+
+      expect(screen.getByTestId('btn-undo')).toBeDefined();
+      expect(screen.getByTestId('btn-reject')).toBeDefined();
+      expect(screen.getByTestId('btn-like')).toBeDefined();
+      expect(screen.getByTestId('btn-matches')).toBeDefined();
+    });
+
+    it('deve responder aos atalhos ArrowLeft (rejeitar) e ArrowRight (curtir)', () => {
+      const handleSwipe = vi.fn();
+      render(
+        <SwipeDeck
+          places={mockPlaces}
+          isSwiped={() => false}
+          onSwipe={handleSwipe}
+          onUndo={vi.fn()}
+          canUndo={false}
+          onViewMatches={vi.fn()}
+          totalLikes={0}
+          animationDuration={0}
+        />
+      );
+
+      // Seta Direita -> Curtir
+      fireEvent.keyDown(window, { key: 'ArrowRight', code: 'ArrowRight' });
+      expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'liked');
+
+      // Seta Esquerda -> Rejeitar
+      fireEvent.keyDown(window, { key: 'ArrowLeft', code: 'ArrowLeft' });
+      expect(handleSwipe).toHaveBeenCalledWith(mockPlaces[0], 'rejected');
+    });
+
+    it('deve responder à tecla ArrowUp para acionar desfazer (onUndo) se canUndo for verdadeiro', () => {
+      const handleUndo = vi.fn();
+      render(
+        <SwipeDeck
+          places={mockPlaces}
+          isSwiped={() => false}
+          onSwipe={vi.fn()}
+          onUndo={handleUndo}
+          canUndo={true}
+          onViewMatches={vi.fn()}
+          totalLikes={1}
+          animationDuration={0}
+        />
+      );
+
+      fireEvent.keyDown(window, { key: 'ArrowUp', code: 'ArrowUp' });
+      expect(handleUndo).toHaveBeenCalledTimes(1);
+    });
+
+    it('não deve acionar atalhos de navegação se o foco estiver em um input de texto', () => {
+      const handleSwipe = vi.fn();
+      render(
+        <div>
+          <input data-testid="search-input" />
+          <SwipeDeck
+            places={mockPlaces}
+            isSwiped={() => false}
+            onSwipe={handleSwipe}
+            onUndo={vi.fn()}
+            canUndo={false}
+            onViewMatches={vi.fn()}
+            totalLikes={0}
+            animationDuration={0}
+          />
+        </div>
+      );
+
+      const input = screen.getByTestId('search-input');
+      input.focus();
+
+      fireEvent.keyDown(input, { key: 'ArrowRight', code: 'ArrowRight' });
+      fireEvent.keyDown(input, { key: 'ArrowLeft', code: 'ArrowLeft' });
+
+      expect(handleSwipe).not.toHaveBeenCalled();
+    });
+  });
 });

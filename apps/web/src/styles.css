@@ -2044,3 +2044,176 @@ h1, h2, h3, h4, h5, h6 {
 .spin-animate {
   animation: spin 1s linear infinite;
 }
+
+/* Accessibility & Screen Reader Utilities */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.badge-content-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-address-icon {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.search-input-icon {
+  margin-right: 0.5rem;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.search-btn-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* PWA Install Banner (Wanderlust Editorial) */
+.pwa-install-banner {
+  position: sticky;
+  top: 72px;
+  z-index: 990;
+  margin: 0.75rem auto;
+  max-width: 680px;
+  width: calc(100% - 2rem);
+  padding: 0.75rem 1.15rem;
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  animation: slideDownBanner 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDownBanner {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pwa-install-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.pwa-install-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.pwa-install-texts {
+  min-width: 0;
+}
+
+.pwa-install-title {
+  display: block;
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.25;
+}
+
+.pwa-install-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  margin-top: 2px;
+  white-space: normal;
+}
+
+.pwa-install-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.pwa-install-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.48rem 0.95rem;
+  background: var(--primary-hover);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.pwa-install-btn-action:hover {
+  background: #c2410c;
+}
+
+.pwa-install-btn-action:active {
+  transform: scale(0.97);
+}
+
+.pwa-install-btn-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.pwa-install-btn-dismiss:hover {
+  background: var(--surface-subtle);
+  color: var(--text-main);
+}
+
+@media (max-width: 640px) {
+  .pwa-install-banner {
+    top: 64px;
+    padding: 0.7rem 0.9rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+    margin: 0.5rem auto;
+    width: calc(100% - 1.5rem);
+  }
+
+  .pwa-install-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
