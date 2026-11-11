@@ -155,7 +155,8 @@ Cada agente deve atuar estritamente dentro do seu escopo isolado (\`.agents/<per
 
 function parseFlags(args) {
   const flags = { commands: [] };
-  for (const arg of args) {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
     if (arg === '--force') flags.force = true;
     else if (arg === '--status' || arg === 'status') flags.commands.push('status');
     else if (arg === '--board' || arg === 'board') flags.commands.push('board');
@@ -165,8 +166,21 @@ function parseFlags(args) {
       flags.commands.push('dispatch');
     } else if (arg === '--close' || arg === 'close' || arg === '--close-current') {
       flags.commands.push('close');
-    } else if (arg.startsWith('--issue=')) flags.issue = Number(arg.slice('--issue='.length));
-    else if (arg.startsWith('--message=')) flags.message = arg.slice('--message='.length);
+    } else if (arg === '--pr' && args[i + 1] && /^\d+$/.test(args[i + 1])) {
+      flags.pr = Number(args[++i]);
+    } else if (arg.startsWith('--pr=')) {
+      flags.pr = Number(arg.slice('--pr='.length));
+    } else if (arg.startsWith('--issue=')) {
+      flags.issue = Number(arg.slice('--issue='.length));
+    } else if (arg === '--issue' && args[i + 1] && /^\d+$/.test(args[i + 1])) {
+      flags.issue = Number(args[++i]);
+    } else if (arg.startsWith('--message=')) {
+      flags.message = arg.slice('--message='.length);
+    } else if (arg === '--message' && args[i + 1]) {
+      flags.message = args[++i];
+    } else if (/^\d+$/.test(arg) && !flags.issue) {
+      flags.issue = Number(arg);
+    }
   }
   return flags;
 }
@@ -314,7 +328,11 @@ async function cmdClose(flags) {
     throw new Error('No matching active Windrose issue found to close.');
   }
 
-  const note = flags.message || 'Pipeline Windrose de 7 etapas concluído e validado com sucesso.';
+  const note =
+    flags.message ||
+    (flags.pr
+      ? `Pipeline Windrose de 7 etapas concluído e validado com sucesso via PR #${flags.pr}.`
+      : 'Pipeline Windrose de 7 etapas concluído e validado com sucesso.');
   await paperclipFetch(`/issues/${targetPc.id}/comments`, {
     method: 'POST',
     body: JSON.stringify({ body: `**Ciclo Encerrado**\n\n${note}` }),
