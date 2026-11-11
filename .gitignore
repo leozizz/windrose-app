@@ -182,3 +182,7 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 
 .wrangler/
+
+# Agent standards review outputs
+REVIEW_REPORT.md
+review-fixes.patch

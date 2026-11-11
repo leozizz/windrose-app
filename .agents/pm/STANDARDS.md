@@ -1,0 +1,33 @@
+# Diretrizes de Engenharia e Padrões de Código (Universal Agent)
+
+> Gerado automaticamente por `@apenasgabs/agent-standards` a partir de `agent.config.json`.
+
+## 1. Padrões de Funções e Sintaxe
+- ❌ **NUNCA** usar `function` tradicional em arquivos de lógica/componentes.
+- ✅ **SEMPRE** utilizar arrow functions (`const fn = () => {}`).
+
+## 2. Tipagem TypeScript
+- ❌ **PROIBIDO** o uso de `any` em qualquer circunstância.
+- ✅ Tipar explicitamente parâmetros e retornos; usar `unknown` para valores indeterminados.
+- ✅ Preferir `interface` para objetos e contratos de dados complexos.
+- ✅ Parâmetros e retornos de funções devem possuir tipagem estrita explícita.
+
+## 3. Componentes e Estilo de UI
+- ✅ Biblioteca / Design System: **CSS Variables + Design System Windrose Wanderlust (apps/web/src/styles.css)**.
+- ✅ **OBRIGATÓRIO**: Todos os botões, campos de entrada e seletores interativos devem conter `data-testid`.
+- ❌ **PROIBIDO** o uso de `!important` no CSS. Respeite a especificidade e os tokens de design.
+- 🎨 **Temas Oficiais**: Windrose Wanderlust Light Editorial (#fbfbf9 / #ffffff / #f97316).
+
+## 4. Segurança e Higiene de Código
+- ❌ **XSS Proibido**: Nunca utilizar `innerHTML` sem sanitização.
+- ❌ **Credenciais Proibidas**: Nunca commitar API keys, senhas ou tokens hardcoded.
+- 🛡️ **Restrição de Runtime (web)**: Browser / Cloudflare Pages & Workers Edge runtime estrito: PROIBIDO importar módulos nativos Node.js (fs, path, child_process, os, node:crypto) em apps/web/, apps/edge-api/ e functions/.
+- ❌ Remover `console.log` e chamadas de depuração residuais antes de finalizar.
+- ❌ Proibido blocos `catch` vazios sem tratamento ou logging estruturado.
+
+## 5. Arquitetura, SDD e Resiliência
+- 📋 **Spec-Driven Development (SDD)**: Nenhuma alteração de código sem spec/plano correspondente aprovado.
+
+## 6. Fluxo de Trabalho e Code Review
+- Toda entrega deve atender estritamente aos requisitos da tarefa/issue e aos padrões deste documento.
+- Para auditar a conformidade deste repositório, execute: `pnpm standards:review` (ou `node tools/agent-standards/bin/agent-standards.mjs review`).

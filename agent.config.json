@@ -1,0 +1,43 @@
+{
+  "$schema": "./tools/agent-standards/agent.config.json",
+  "preset": "react",
+  "project": "windrose-app",
+  "framework": "React 19 + Vite 8 + Hono 4 (Cloudflare Pages/Workers)",
+  "rules": {
+    "functions": "arrow-only",
+    "typescript": {
+      "noExplicitAny": true,
+      "preferInterfaces": true,
+      "strictParams": true
+    },
+    "ui": {
+      "preferred": "CSS Variables + Design System Windrose Wanderlust (apps/web/src/styles.css)",
+      "requireDataTestId": true,
+      "noImportant": true,
+      "themes": [
+        "Windrose Wanderlust Light Editorial (#fbfbf9 / #ffffff / #f97316)"
+      ]
+    },
+    "security": {
+      "blockInnerHTML": true,
+      "blockHardcodedSecrets": true,
+      "runtimeRestrictions": {
+        "web": "Browser / Cloudflare Pages & Workers Edge runtime estrito: PROIBIDO importar módulos nativos Node.js (fs, path, child_process, os, node:crypto) em apps/web/, apps/edge-api/ e functions/"
+      }
+    },
+    "cleanCode": {
+      "blockConsoleLog": true,
+      "blockEmptyCatch": true
+    },
+    "architecture": {
+      "sddRequired": true
+    }
+  },
+  "docsSync": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    ".github/copilot-instructions.md",
+    ".cursorrules",
+    ".agents/STANDARDS.md"
+  ]
+}
