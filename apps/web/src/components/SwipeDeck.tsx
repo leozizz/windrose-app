@@ -143,15 +143,34 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     };
   }, [isDragging, handleTouchMove, handleTouchEnd]);
 
-  // Keyboard navigation
+  // Keyboard navigation & accessibility shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentCard || isAnimating) return;
-      if (e.key === 'ArrowRight' || e.key === 'l') {
+
+      // Do not intercept navigation shortcuts if typing in inputs or contenteditable elements
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
         triggerSwipe('liked');
-      } else if (e.key === 'ArrowLeft' || e.key === 'h') {
+      } else if (e.key === 'ArrowLeft' || e.key === 'h' || e.key === 'H') {
+        e.preventDefault();
         triggerSwipe('rejected');
-      } else if (e.key === 'z' && (e.metaKey || e.ctrlKey) && canUndo) {
+      } else if (
+        (e.key === 'ArrowUp' || e.key === 'z' || e.key === 'Z') &&
+        canUndo
+      ) {
+        e.preventDefault();
         onUndo();
       }
     };
@@ -162,10 +181,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
 
   if (!currentCard) {
     return (
-      <div className="swipe-deck-container">
+      <div
+        className="swipe-deck-container"
+        role="region"
+        aria-label="Descoberta de locais"
+        data-testid="swipe-deck-empty"
+      >
         <div className="empty-deck-card">
           <div className="empty-deck-icon">
-            <Sparkles size={44} style={{ color: 'var(--primary)' }} />
+            <Sparkles size={44} />
           </div>
           <h3>Você explorou todos os locais!</h3>
           <p>
@@ -173,14 +197,15 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
               ? `Você curtiu ${totalLikes} ${totalLikes === 1 ? 'local' : 'locais'} incríveis. Vamos montar o seu roteiro?`
               : 'Nenhum local foi curtido nesta cidade. Que tal reiniciar e rever as opções?'}
           </p>
-          <div className="matches-actions-group" style={{ justifyContent: 'center' }}>
+          <div className="matches-actions-group">
             {canUndo && (
               <button
                 type="button"
                 className="action-button-secondary"
                 onClick={onUndo}
+                data-testid="btn-empty-undo"
               >
-                <RotateCcw size={15} style={{ marginRight: '6px' }} />
+                <RotateCcw size={15} />
                 <span>Desfazer Última Escolha</span>
               </button>
             )}
@@ -189,6 +214,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 type="button"
                 className="action-button-primary"
                 onClick={onViewMatches}
+                data-testid="btn-empty-view-matches"
               >
                 <span>Ver {totalLikes} Matches →</span>
               </button>
@@ -280,12 +306,12 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         <span className="category-tag">{formatCategory(poi.category)}</span>
         <span className="environment-tag">
           {poi.environment === 'OUTDOOR' ? (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span className="badge-content-inline">
               <Sun size={12} />
               <span>Ao Ar Livre</span>
             </span>
           ) : (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+            <span className="badge-content-inline">
               <Landmark size={12} />
               <span>Coberto</span>
             </span>
@@ -298,7 +324,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
         <h2 className="card-title">{poi.name}</h2>
         {poi.address && (
           <p className="card-address">
-            <MapPin size={14} style={{ flexShrink: 0, opacity: 0.9 }} />
+            <MapPin size={14} className="card-address-icon" />
             <span>{poi.address}</span>
           </p>
         )}
@@ -317,7 +343,17 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   );
 
   return (
-    <div className="swipe-deck-container">
+    <div
+      className="swipe-deck-container"
+      role="region"
+      aria-label="Descoberta de locais"
+      aria-roledescription="carrossel de descoberta interativo"
+      data-testid="swipe-deck-container"
+    >
+      <div className="sr-only" aria-live="polite" data-testid="swipe-live-region">
+        {`Local ${currentCard.name}, categoria ${formatCategory(currentCard.category)}. Use seta direita para curtir ou seta esquerda para passar.`}
+      </div>
+
       <div className="cards-stack-area">
         {/* 1. Third Card in the Background (Fully populated details) */}
         {thirdCard && (
@@ -404,8 +440,9 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           className="action-circle-btn btn-undo"
           onClick={onUndo}
           disabled={!canUndo || isAnimating}
-          title="Desfazer última decisão (Ctrl+Z)"
+          title="Desfazer última decisão (Seta Cima ou Z)"
           aria-label="Desfazer"
+          data-testid="btn-undo"
         >
           <RotateCcw size={18} strokeWidth={2.2} />
         </button>
@@ -419,6 +456,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           disabled={isAnimating}
           title="Não tenho interesse (Seta Esquerda)"
           aria-label="Rejeitar"
+          data-testid="btn-reject"
         >
           <X size={24} strokeWidth={2.4} />
         </button>
@@ -432,6 +470,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           disabled={isAnimating}
           title="Curtir e adicionar ao roteiro (Seta Direita)"
           aria-label="Curtir"
+          data-testid="btn-like"
         >
           <Heart size={24} strokeWidth={2.4} />
         </button>
@@ -441,6 +480,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
           className="btn-matches-pill"
           onClick={onViewMatches}
           aria-label={`Ver matches (${totalLikes})`}
+          data-testid="btn-matches"
         >
           <span>Matches</span>
           <span className="nav-badge-count">{totalLikes}</span>
