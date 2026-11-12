@@ -1,8 +1,9 @@
-import { PointOfInterest } from '@windrose/shared-types';
+import { PointOfInterest, PoiCategory } from '@windrose/shared-types';
 import { OverpassClient } from '../../infrastructure/places/overpass.client';
 import { NominatimClient } from '../../infrastructure/places/nominatim.client';
 import { WikimediaClient } from '../../infrastructure/places/wikimedia.client';
 import { PhotoPoolService } from '../../infrastructure/places/photo-pool.service';
+import { BeachClassifier } from './beach-classifier';
 import {
   CURATED_CITY_POIS,
   generateGenericCityPois,
@@ -15,12 +16,13 @@ export class PlacesService {
   /**
    * Get an assembled deck of places for swipe discovery in a destination.
    */
-  static async getDeckForCity(
+  static getDeckForCity = async (
     city: string,
     lat: number,
     lon: number,
-    limit = 20
-  ): Promise<PointOfInterest[]> {
+    limit = 20,
+    category?: PoiCategory
+  ): Promise<PointOfInterest[]> => {
     const cityKey = city
       .toLowerCase()
       .normalize('NFD')
@@ -64,9 +66,19 @@ export class PlacesService {
       combined.push(...generateGenericCityPois(city, lat, lon));
     }
 
-    // 5. Enrich top attractions with Wikimedia Search API & Thematic Photo Pool
+    // 5. Prioritize or filter by category when requested (e.g. BEACH)
+    let selectedPois = combined;
+    if (category) {
+      const matched = combined.filter((p) => p.category === category);
+      if (matched.length > 0) {
+        const others = combined.filter((p) => p.category !== category);
+        selectedPois = [...matched, ...others];
+      }
+    }
+
+    // 6. Enrich top attractions with Wikimedia Search API, Thematic Photo Pool & Beach Metadata
     const enriched = await Promise.all(
-      combined.slice(0, limit).map(async (poi) => {
+      selectedPois.slice(0, limit).map(async (poi) => {
         // Sanitize any residual UPPERCASE category in tags
         const cleanTags = (poi.tags || []).map((t) => {
           if (t === 'ATTRACTION') return 'Ponto Turístico';
@@ -79,12 +91,19 @@ export class PlacesService {
           return t;
         });
 
+        // Enforce beach metadata enrichment for coastal places
+        const beachMetadata =
+          poi.category === PoiCategory.BEACH
+            ? (poi.beachMetadata || BeachClassifier.classify(poi))
+            : undefined;
+
         // If the POI already has a verified, non-placeholder custom image (e.g. curated), keep it
         const isGeneric = PhotoPoolService.isGenericPlaceholder(poi.imageUrl);
         if (poi.imageUrl && !isGeneric && !poi.imageUrl.includes('photo-fallback')) {
           return {
             ...poi,
             tags: cleanTags,
+            ...(beachMetadata ? { beachMetadata } : {}),
           };
         }
 
@@ -102,10 +121,11 @@ export class PlacesService {
           description: wiki.summary || poi.description,
           imageUrl: finalImageUrl,
           tags: cleanTags,
+          ...(beachMetadata ? { beachMetadata } : {}),
         };
       })
     );
 
     return enriched;
-  }
+  };
 }

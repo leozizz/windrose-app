@@ -69,6 +69,48 @@ describe('Weather Routes Integration (Hono Edge API)', () => {
       expect(json.dailyScores).toHaveLength(1);
     });
 
+    it('deve retornar HTTP 200 com ranking para activity=BEACH_DAY', async () => {
+      vi.spyOn(GeocodingClient, 'searchCity').mockResolvedValueOnce({
+        name: 'Florianópolis',
+        latitude: -27.59,
+        longitude: -48.54,
+        country: 'Brazil',
+      });
+
+      const mockWeather: LocationWeatherInfo = {
+        latitude: -27.59,
+        longitude: -48.54,
+        cityName: 'Florianópolis',
+        timezone: 'America/Sao_Paulo',
+        daily: [
+          {
+            date: '2026-11-15',
+            temperatureMax: 28,
+            temperatureMin: 22,
+            apparentTemperatureMax: 29,
+            apparentTemperatureMin: 22,
+            precipitationSum: 0,
+            weatherCode: 0,
+            maxWindSpeed: 10,
+            waveHeightMax: 0.8,
+            wavePeriodMax: 9,
+          },
+        ],
+      };
+
+      vi.spyOn(OpenMeteoClient, 'getWeatherInfo').mockResolvedValueOnce(mockWeather);
+
+      const res = await app.request(
+        '/api/weather/rank?city=Florianopolis&activity=BEACH_DAY'
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.activity).toBe('BEACH_DAY');
+      expect(json.overallScore).toBeGreaterThanOrEqual(85);
+      expect(json.recommendationLevel).toBe('EXCELLENT');
+    });
+
     it('deve retornar HTTP 404 quando o serviço de geocodificação não encontrar a cidade', async () => {
       vi.spyOn(GeocodingClient, 'searchCity').mockRejectedValueOnce(
         new Error("Location 'UnknownCity123' not found")

@@ -4,4 +4,5 @@
 export enum ActivityType {
   OUTDOOR_SIGHTSEEING = 'OUTDOOR_SIGHTSEEING',
   SURFING = 'SURFING',
+  BEACH_DAY = 'BEACH_DAY',
 }

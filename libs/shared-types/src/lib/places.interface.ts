@@ -21,6 +21,46 @@ export enum PoiEnvironment {
 }
 
 /**
+ * Coastal and beach morphological/experience profile.
+ */
+export enum BeachProfileType {
+  CALM_WATERS = 'CALM_WATERS',
+  SURF_ACTIVE = 'SURF_ACTIVE',
+  DEEP_DROP_OFF = 'DEEP_DROP_OFF',
+  WILD_RESERVED = 'WILD_RESERVED',
+}
+
+/**
+ * Estimated deterministic crowd level ($0.00).
+ */
+export enum CrowdLevel {
+  QUIET = 'QUIET',
+  MODERATE = 'MODERATE',
+  BUZZING = 'BUZZING',
+}
+
+/**
+ * Marine safety condition for recreational swimming.
+ */
+export interface WaveSafetyCondition {
+  heightMeters: number;
+  periodSeconds: number;
+  safeForSwimming: boolean;
+  safetyWarning?: string;
+}
+
+/**
+ * Enriched beach metadata for coastal destinations.
+ */
+export interface BeachMetadata {
+  profile: BeachProfileType;
+  crowdEstimate: CrowdLevel;
+  lifeguardAvailable: boolean;
+  waveConditions?: WaveSafetyCondition;
+  swimmingSuitabilityScore: number;
+}
+
+/**
  * Normalized Point of Interest representation for swipe discovery and itinerary generation.
  */
 export interface PointOfInterest {
@@ -36,4 +76,5 @@ export interface PointOfInterest {
   tags: string[];
   address?: string;
   website?: string;
+  beachMetadata?: BeachMetadata;
 }
