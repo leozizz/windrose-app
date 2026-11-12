@@ -27,8 +27,22 @@ export class ItineraryPlannerEngine {
     }
 
     // Segregate places into thematic pools
+    const isBeach = (p: PointOfInterest): boolean =>
+      p.category === PoiCategory.BEACH || Boolean(p.beachMetadata);
+
+    const beachPool = likedPois
+      .filter((p) => isBeach(p))
+      .sort((a, b) => {
+        const aSafe = a.beachMetadata?.waveConditions?.safeForSwimming ? 1 : 0;
+        const bSafe = b.beachMetadata?.waveConditions?.safeForSwimming ? 1 : 0;
+        if (aSafe !== bSafe) return bSafe - aSafe;
+        const aScore = a.beachMetadata?.swimmingSuitabilityScore ?? 50;
+        const bScore = b.beachMetadata?.swimmingSuitabilityScore ?? 50;
+        return bScore - aScore;
+      });
+
     const outdoorPool = likedPois.filter(
-      (p) => p.environment === PoiEnvironment.OUTDOOR && p.category !== PoiCategory.BAR
+      (p) => p.environment === PoiEnvironment.OUTDOOR && p.category !== PoiCategory.BAR && !isBeach(p)
     );
     const indoorPool = likedPois.filter(
       (p) => p.environment === PoiEnvironment.INDOOR || p.category === PoiCategory.MUSEUM
@@ -40,7 +54,11 @@ export class ItineraryPlannerEngine {
         p.environment === PoiEnvironment.HYBRID
     );
     const genericPool = likedPois.filter(
-      (p) => !outdoorPool.includes(p) && !indoorPool.includes(p) && !diningPool.includes(p)
+      (p) =>
+        !isBeach(p) &&
+        !outdoorPool.includes(p) &&
+        !indoorPool.includes(p) &&
+        !diningPool.includes(p)
     );
 
     const scheduledPoiIds = new Set<string>();
@@ -56,6 +74,7 @@ export class ItineraryPlannerEngine {
 
     const popAny = (): PointOfInterest | null => {
       return (
+        popFrom(beachPool) ||
         popFrom(outdoorPool) ||
         popFrom(indoorPool) ||
         popFrom(diningPool) ||
@@ -65,9 +84,19 @@ export class ItineraryPlannerEngine {
 
     const popAnyExceptIndoor = (): PointOfInterest | null => {
       return (
+        popFrom(beachPool) ||
         popFrom(outdoorPool) ||
         popFrom(diningPool) ||
         popFrom(genericPool)
+      );
+    };
+
+    const popAnyNonBeachAdverse = (): PointOfInterest | null => {
+      return (
+        popFrom(indoorPool) ||
+        popFrom(diningPool) ||
+        popFrom(genericPool) ||
+        popFrom(outdoorPool)
       );
     };
 
@@ -88,12 +117,29 @@ export class ItineraryPlannerEngine {
       let morningNote: string | undefined = undefined;
 
       if (isRainyOrAdverse) {
-        morningPlace = popFrom(indoorPool) || popFrom(diningPool) || popAny();
+        // Never schedule beaches in rainy/adverse weather
+        morningPlace =
+          popFrom(indoorPool) ||
+          popFrom(diningPool) ||
+          popAnyNonBeachAdverse();
         morningNote = morningPlace ? '🏛️ Programado para local coberto devido ao tempo adverso' : undefined;
       } else {
-        // On a sunny day, prefer outdoor. Never drain indoor attractions if rainy days exist
-        morningPlace = popFrom(outdoorPool) || (hasRainyDays ? popAnyExceptIndoor() : popAny());
-        morningNote = morningPlace ? '☀️ Clima ideal para atividades ao ar livre' : undefined;
+        // On a sunny day, prioritize beaches or outdoor activities. Never drain indoor attractions if rainy days exist
+        morningPlace =
+          popFrom(beachPool) ||
+          popFrom(outdoorPool) ||
+          (hasRainyDays ? popAnyExceptIndoor() : popAny());
+
+        if (morningPlace) {
+          if (isBeach(morningPlace)) {
+            const isSafe = morningPlace.beachMetadata?.waveConditions?.safeForSwimming ?? true;
+            morningNote = isSafe
+              ? '☀️ Clima balnear ideal: mar calmo e seguro para banho'
+              : '⚠️ Alerta balnear: mar revolto, permaneça na orla';
+          } else {
+            morningNote = '☀️ Clima ideal para atividades ao ar livre';
+          }
+        }
       }
 
       if (morningPlace) {
@@ -112,10 +158,27 @@ export class ItineraryPlannerEngine {
       let afternoonNote: string | undefined = undefined;
 
       if (isRainyOrAdverse) {
-        afternoonPlace = popFrom(indoorPool) || popFrom(diningPool) || popAny();
+        afternoonPlace =
+          popFrom(indoorPool) ||
+          popFrom(diningPool) ||
+          popAnyNonBeachAdverse();
         afternoonNote = afternoonPlace ? '☕ Passeio e gastronomia protegidos do tempo' : undefined;
       } else {
-        afternoonPlace = popFrom(outdoorPool) || (hasRainyDays ? popAnyExceptIndoor() : popAny());
+        afternoonPlace =
+          popFrom(outdoorPool) ||
+          popFrom(beachPool) ||
+          (hasRainyDays ? popAnyExceptIndoor() : popAny());
+
+        if (afternoonPlace) {
+          if (isBeach(afternoonPlace)) {
+            const isSafe = afternoonPlace.beachMetadata?.waveConditions?.safeForSwimming ?? true;
+            afternoonNote = isSafe
+              ? '☀️ Tarde com clima balnear favorável para praia'
+              : '⚠️ Alerta balnear: mar revolto, atenção na orla';
+          } else {
+            afternoonNote = '☀️ Clima ideal para passeios e caminhadas ao ar livre';
+          }
+        }
       }
 
       if (afternoonPlace) {
@@ -130,7 +193,9 @@ export class ItineraryPlannerEngine {
       }
 
       // Evening Slot (19:30 - 22:30)
-      const eveningPlace = popFrom(diningPool) || (hasRainyDays ? popAnyExceptIndoor() : popAny());
+      const eveningPlace = isRainyOrAdverse
+        ? popFrom(diningPool) || popAnyNonBeachAdverse()
+        : popFrom(diningPool) || (hasRainyDays ? popAnyExceptIndoor() : popAny());
       if (eveningPlace) {
         slots.push({
           slot: 'EVENING',

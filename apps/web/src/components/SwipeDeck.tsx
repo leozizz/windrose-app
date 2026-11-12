@@ -1,7 +1,25 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { RotateCcw, X, Heart, MapPin, Sun, Landmark, Sparkles } from 'lucide-react';
-import { PointOfInterest } from '@windrose/shared-types';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+  RotateCcw,
+  X,
+  Heart,
+  MapPin,
+  Sun,
+  Landmark,
+  Sparkles,
+  Waves,
+  Users,
+  ShieldCheck,
+  AlertTriangle,
+} from 'lucide-react';
+import { PointOfInterest, PoiCategory, BeachProfileType } from '@windrose/shared-types';
 import { formatCategory } from '../utils/labels';
+import { BeachFilterBar } from './BeachFilterBar';
+import {
+  getBeachProfileLabel,
+  getCrowdLevelLabel,
+  getWaveSafetyInfo,
+} from '../utils/beach';
 
 interface SwipeDeckProps {
   places: PointOfInterest[];
@@ -39,13 +57,67 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   animationDuration = typeof process !== 'undefined' && process.env.NODE_ENV === 'test' ? 0 : 340,
   onAnnounce,
 }) => {
-  const remainingPlaces = places.filter((p) => !isSwiped(p.id));
+  const [beachFilter, setBeachFilter] = useState<BeachProfileType | 'ALL'>('ALL');
+
+  const hasBeaches = useMemo(
+    () => places.some((p) => p.category === PoiCategory.BEACH || Boolean(p.beachMetadata)),
+    [places]
+  );
+
+  const unswipedPlaces = useMemo(
+    () => places.filter((p) => !isSwiped(p.id)),
+    [places, isSwiped]
+  );
+
+  const beachCounts = useMemo(() => {
+    if (!hasBeaches) return undefined;
+    const counts: Partial<Record<BeachProfileType | 'ALL', number>> = {
+      ALL: unswipedPlaces.length,
+      [BeachProfileType.CALM_WATERS]: 0,
+      [BeachProfileType.SURF_ACTIVE]: 0,
+      [BeachProfileType.DEEP_DROP_OFF]: 0,
+      [BeachProfileType.WILD_RESERVED]: 0,
+    };
+
+    unswipedPlaces.forEach((p) => {
+      if (p.beachMetadata?.profile) {
+        counts[p.beachMetadata.profile] = (counts[p.beachMetadata.profile] || 0) + 1;
+      }
+    });
+
+    return counts;
+  }, [hasBeaches, unswipedPlaces]);
+
+  const remainingPlaces = useMemo(() => {
+    if (!hasBeaches || beachFilter === 'ALL') {
+      return unswipedPlaces;
+    }
+    return unswipedPlaces.filter((p) => p.beachMetadata?.profile === beachFilter);
+  }, [hasBeaches, beachFilter, unswipedPlaces]);
+
   const currentCard = remainingPlaces[0];
   const nextCard = remainingPlaces[1];
   const thirdCard = remainingPlaces[2];
 
   // A11y live region state
   const [announcement, setAnnouncement] = useState<string>('');
+
+  const handleFilterChange = useCallback(
+    (filter: BeachProfileType | 'ALL') => {
+      setBeachFilter(filter);
+      const filterLabel = filter === 'ALL' ? 'Todas' : getBeachProfileLabel(filter);
+      const matchingCount =
+        filter === 'ALL'
+          ? unswipedPlaces.length
+          : unswipedPlaces.filter((p) => p.beachMetadata?.profile === filter).length;
+      const msg = `Filtro de praias: ${filterLabel} selecionado. ${matchingCount} ${
+        matchingCount === 1 ? 'local disponível' : 'locais disponíveis'
+      }.`;
+      setAnnouncement(msg);
+      onAnnounce?.(msg);
+    },
+    [unswipedPlaces, onAnnounce]
+  );
 
   // Drag interaction physics
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -215,7 +287,7 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentCard, isAnimating, triggerSwipe, canUndo, handleUndo]);
 
-  if (!currentCard) {
+  if (unswipedPlaces.length === 0) {
     return (
       <div
         className="swipe-deck-container"
@@ -255,6 +327,42 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
                 <span>Ver {totalLikes} Matches →</span>
               </button>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentCard) {
+    return (
+      <div
+        className="swipe-deck-container"
+        role="region"
+        aria-label="Descoberta de locais"
+        data-testid="swipe-deck-empty-filter"
+      >
+        {hasBeaches && (
+          <BeachFilterBar
+            selectedFilter={beachFilter}
+            onFilterChange={handleFilterChange}
+            beachCounts={beachCounts}
+          />
+        )}
+        <div className="empty-deck-card">
+          <div className="empty-deck-icon">
+            <Waves size={44} />
+          </div>
+          <h3>Nenhuma atração com este perfil</h3>
+          <p>Não há locais restantes para o perfil selecionado. Que tal explorar outros perfis?</p>
+          <div className="matches-actions-group">
+            <button
+              type="button"
+              className="action-button-primary"
+              onClick={() => handleFilterChange('ALL')}
+              data-testid="btn-reset-beach-filter"
+            >
+              <span>Ver Todas as Opções</span>
+            </button>
           </div>
         </div>
       </div>
@@ -326,57 +434,110 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
   }
 
   // Render unified card content across all layers to prevent content pop-in
-  const renderCardContent = (poi: PointOfInterest, isCurrent: boolean) => (
-    <div className="card-image-wrapper">
-      <img
-        src={poi.imageUrl}
-        alt={poi.name}
-        className="card-image"
-        draggable={false}
-        loading={isCurrent ? 'eager' : 'lazy'}
-      />
-      <div className="card-gradient-overlay" />
+  const renderCardContent = (poi: PointOfInterest, isCurrent: boolean) => {
+    const safetyInfo = poi.beachMetadata?.waveConditions
+      ? getWaveSafetyInfo(poi.beachMetadata.waveConditions)
+      : null;
 
-      {/* Top Badges */}
-      <div className="card-top-badges">
-        <span className="category-tag">{formatCategory(poi.category)}</span>
-        <span className="environment-tag">
-          {poi.environment === 'OUTDOOR' ? (
-            <span className="badge-content-inline">
-              <Sun size={12} />
-              <span>Ao Ar Livre</span>
-            </span>
-          ) : (
-            <span className="badge-content-inline">
-              <Landmark size={12} />
-              <span>Coberto</span>
-            </span>
-          )}
-        </span>
-      </div>
+    return (
+      <div className="card-image-wrapper">
+        <img
+          src={poi.imageUrl}
+          alt={poi.name}
+          className="card-image"
+          draggable={false}
+          loading={isCurrent ? 'eager' : 'lazy'}
+        />
+        <div className="card-gradient-overlay" />
 
-      {/* Bottom Content Overlay with full details */}
-      <div className="card-content-overlay">
-        <h2 className="card-title">{poi.name}</h2>
-        {poi.address && (
-          <p className="card-address">
-            <MapPin size={14} className="card-address-icon" />
-            <span>{poi.address}</span>
-          </p>
-        )}
-        <p className="card-description">{poi.description}</p>
-        {poi.tags && poi.tags.length > 0 && (
-          <div className="card-tags">
-            {poi.tags.slice(0, 3).map((tag, idx) => (
-              <span key={idx} className="card-tag">
-                #{tag}
+        {/* Top Badges */}
+        <div className="card-top-badges">
+          <span className="category-tag">{formatCategory(poi.category)}</span>
+          <span className="environment-tag">
+            {poi.environment === 'OUTDOOR' ? (
+              <span className="badge-content-inline">
+                <Sun size={12} />
+                <span>Ao Ar Livre</span>
               </span>
-            ))}
-          </div>
-        )}
+            ) : (
+              <span className="badge-content-inline">
+                <Landmark size={12} />
+                <span>Coberto</span>
+              </span>
+            )}
+          </span>
+        </div>
+
+        {/* Bottom Content Overlay with full details */}
+        <div className="card-content-overlay">
+          {/* Coastal Badges if beach */}
+          {poi.beachMetadata && (
+            <div className="beach-card-chips">
+              <span
+                className="beach-chip profile"
+                data-testid="badge-beach-profile"
+              >
+                <Waves size={12} className="chip-inline-icon" />
+                <span>{getBeachProfileLabel(poi.beachMetadata.profile)}</span>
+              </span>
+              <span
+                className="beach-chip crowd"
+                data-testid="badge-crowd-estimate"
+              >
+                <Users size={12} className="chip-inline-icon" />
+                <span>{getCrowdLevelLabel(poi.beachMetadata.crowdEstimate)}</span>
+              </span>
+              {safetyInfo && (
+                <span
+                  className={`beach-chip wave-safety ${
+                    safetyInfo.isSafe ? 'is-safe' : 'is-hazard'
+                  }`}
+                  data-testid="badge-wave-safety"
+                >
+                  {safetyInfo.isSafe ? (
+                    <ShieldCheck size={12} className="chip-inline-icon" />
+                  ) : (
+                    <AlertTriangle size={12} className="chip-inline-icon" />
+                  )}
+                  <span>{safetyInfo.label}</span>
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Safety Warning Banner if sea conditions are hazardous */}
+          {safetyInfo && !safetyInfo.isSafe && (
+            <div
+              className="beach-safety-warning-banner"
+              data-testid="beach-safety-warning"
+              role="alert"
+            >
+              <AlertTriangle size={14} className="warning-banner-icon" />
+              <span>{safetyInfo.warning}</span>
+            </div>
+          )}
+
+          <h2 className="card-title">{poi.name}</h2>
+          {poi.address && (
+            <p className="card-address">
+              <MapPin size={14} className="card-address-icon" />
+              <span>{poi.address}</span>
+            </p>
+          )}
+          <p className="card-description">{poi.description}</p>
+          {poi.tags && poi.tags.length > 0 && (
+            <div className="card-tags">
+              {poi.tags.slice(0, 3).map((tag, idx) => (
+                <span key={idx} className="card-tag">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div
@@ -386,6 +547,14 @@ export const SwipeDeck: React.FC<SwipeDeckProps> = ({
       aria-roledescription="carrossel de descoberta interativo"
       data-testid="swipe-deck-container"
     >
+      {hasBeaches && (
+        <BeachFilterBar
+          selectedFilter={beachFilter}
+          onFilterChange={handleFilterChange}
+          beachCounts={beachCounts}
+        />
+      )}
+
       <div className="sr-only" aria-live="polite" data-testid="swipe-live-region">
         {announcement ||
           `Local ${currentCard.name}, categoria ${formatCategory(currentCard.category)}. Use seta direita para curtir ou seta esquerda para passar.`}
