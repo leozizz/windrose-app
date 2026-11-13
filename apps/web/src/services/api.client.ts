@@ -57,13 +57,17 @@ export const apiClient = {
     city: string,
     lat: number,
     lon: number,
-    limit = 20
+    limit = 20,
+    category?: string
   ): Promise<PlacesDeckResponse> {
     const url = buildApiUrl('/api/places/deck');
     url.searchParams.set('city', city);
     url.searchParams.set('lat', lat.toString());
     url.searchParams.set('lon', lon.toString());
     url.searchParams.set('limit', limit.toString());
+    if (category) {
+      url.searchParams.set('category', category);
+    }
 
     const res = await fetch(url.toString());
     if (!res.ok) {

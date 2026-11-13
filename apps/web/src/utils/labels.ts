@@ -13,6 +13,7 @@ export const CategoryLabels: Record<PoiCategory, string> = {
 export const ActivityLabels: Record<ActivityType, string> = {
   [ActivityType.OUTDOOR_SIGHTSEEING]: 'Passeios ao Ar Livre',
   [ActivityType.SURFING]: 'Surfe e Praia',
+  [ActivityType.BEACH_DAY]: 'Dia de Praia & Banho',
 };
 
 export const RecommendationLabels: Record<string, string> = {
@@ -22,17 +23,17 @@ export const RecommendationLabels: Record<string, string> = {
   POOR: 'Desfavorável',
 };
 
-export function formatCategory(category?: PoiCategory | string): string {
+export const formatCategory = (category?: PoiCategory | string): string => {
   if (!category) return 'Atração';
   return CategoryLabels[category as PoiCategory] || category;
-}
+};
 
-export function formatActivity(activity?: ActivityType | string): string {
+export const formatActivity = (activity?: ActivityType | string): string => {
   if (!activity) return 'Passeios ao Ar Livre';
   return ActivityLabels[activity as ActivityType] || activity;
-}
+};
 
-export function formatRecommendation(level?: string): string {
+export const formatRecommendation = (level?: string): string => {
   if (!level) return 'Favorável';
   return RecommendationLabels[level.toUpperCase()] || level;
-}
+};

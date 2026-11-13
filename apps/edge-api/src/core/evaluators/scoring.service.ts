@@ -6,6 +6,7 @@ import {
 } from '@windrose/shared-types';
 import { OutdoorSightseeingEvaluator } from './outdoor-sightseeing.evaluator';
 import { SurfingEvaluator } from './surfing.evaluator';
+import { BeachEvaluator } from './beach.evaluator';
 
 /**
  * Service calculating overall activity suitability scores and recommendation levels.
@@ -18,16 +19,18 @@ export class ScoringService {
    * @param activity Target activity type.
    * @returns Detailed activity ranking result.
    */
-  static calculateScore(
+  static calculateScore = (
     weatherInfo: LocationWeatherInfo,
     activity: ActivityType
-  ): ActivityRankingResult {
+  ): ActivityRankingResult => {
     const dailyScores: DailyScore[] = weatherInfo.daily.map((day) => {
       switch (activity) {
         case ActivityType.OUTDOOR_SIGHTSEEING:
           return OutdoorSightseeingEvaluator.evaluateDay(day);
         case ActivityType.SURFING:
           return SurfingEvaluator.evaluateDay(day);
+        case ActivityType.BEACH_DAY:
+          return BeachEvaluator.evaluateDay(day);
         default:
           return OutdoorSightseeingEvaluator.evaluateDay(day);
       }
@@ -51,5 +54,5 @@ export class ScoringService {
       recommendationLevel,
       dailyScores,
     };
-  }
+  };
 }

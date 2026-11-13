@@ -163,4 +163,48 @@ describe('PlacesService Domain Logic', () => {
     expect(praia?.imageUrl).toBeDefined();
     expect(praia?.imageUrl).toContain('images.unsplash.com');
   });
+
+  it('deve anexar beachMetadata aos POIs da categoria BEACH', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([
+      {
+        id: 'osm-praia-lagoinha',
+        name: 'Praia da Lagoinha',
+        category: PoiCategory.BEACH,
+        environment: PoiEnvironment.OUTDOOR,
+        latitude: -27.4,
+        longitude: -48.4,
+        city: 'Florianópolis',
+        description: 'Praia de águas calmas',
+        imageUrl: 'https://images.unsplash.com/lagoinha.jpg',
+        tags: ['Praia', 'supervised=yes'],
+      },
+    ]);
+
+    const deck = await PlacesService.getDeckForCity('Florianópolis', -27.59, -48.54);
+    const lagoinha = deck.find((p) => p.name === 'Praia da Lagoinha');
+
+    expect(lagoinha).toBeDefined();
+    expect(lagoinha?.beachMetadata).toBeDefined();
+    expect(lagoinha?.beachMetadata?.profile).toBe('CALM_WATERS');
+    expect(lagoinha?.beachMetadata?.lifeguardAvailable).toBe(true);
+  });
+
+  it('deve priorizar praias no deck quando category=BEACH for informada', async () => {
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([]);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([]);
+
+    const deck = await PlacesService.getDeckForCity(
+      'Florianópolis',
+      -27.59,
+      -48.54,
+      10,
+      PoiCategory.BEACH
+    );
+
+    expect(deck.length).toBeGreaterThan(0);
+    // Primeiro item deve ser da categoria BEACH se houver praias em Florianópolis
+    expect(deck[0].category).toBe(PoiCategory.BEACH);
+    expect(deck[0].beachMetadata).toBeDefined();
+  });
 });

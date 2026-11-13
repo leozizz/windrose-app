@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import app from '../index';
 import { PlacesService } from '../core/places/places.service';
-import { PoiCategory, PoiEnvironment } from '@windrose/shared-types';
+import { PoiCategory, PoiEnvironment, BeachProfileType, CrowdLevel } from '@windrose/shared-types';
 
 describe('Places Routes Integration (Hono Edge API)', () => {
   beforeEach(() => {
@@ -44,6 +44,38 @@ describe('Places Routes Integration (Hono Edge API)', () => {
       expect(json.deck).toHaveLength(1);
       expect(json.deck[0].name).toBe('Praia da Joaquina');
       expect(json.deck[0].category).toBe('BEACH');
+    });
+
+    it('deve aceitar parâmetro opcional category e repassar para PlacesService', async () => {
+      vi.spyOn(PlacesService, 'getDeckForCity').mockResolvedValueOnce([
+        {
+          id: 'test-beach-1',
+          name: 'Praia do Campeche',
+          category: PoiCategory.BEACH,
+          environment: PoiEnvironment.OUTDOOR,
+          latitude: -27.68,
+          longitude: -48.48,
+          city: 'Florianópolis',
+          description: 'Praia de mar aberto com ilha em frente',
+          imageUrl: 'https://example.com/campeche.jpg',
+          tags: ['Praia'],
+          beachMetadata: {
+            profile: BeachProfileType.SURF_ACTIVE,
+            crowdEstimate: CrowdLevel.MODERATE,
+            lifeguardAvailable: true,
+            swimmingSuitabilityScore: 80,
+          },
+        },
+      ]);
+
+      const res = await app.request(
+        '/api/places/deck?city=Florianopolis&lat=-27.59&lon=-48.54&category=BEACH'
+      );
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.category).toBe('BEACH');
+      expect(json.deck[0].name).toBe('Praia do Campeche');
+      expect(json.deck[0].beachMetadata).toBeDefined();
     });
 
     it('deve retornar HTTP 500 se o serviço lançar exceção não tratada', async () => {

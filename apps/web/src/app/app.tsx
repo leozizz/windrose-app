@@ -240,7 +240,7 @@ export const App: React.FC = () => {
                 Sugestões populares:
               </span>
               <div className="hero-suggestions-list">
-                {['Campinas', 'São Paulo', 'Rio de Janeiro', 'Curitiba', 'Salvador', 'Lisboa'].map((citySuggestion) => (
+                {['Ubatuba', 'Florianópolis', 'Rio de Janeiro', 'São Paulo', 'Salvador', 'Campinas'].map((citySuggestion) => (
                   <button
                     key={citySuggestion}
                     type="button"
@@ -329,6 +329,31 @@ export const App: React.FC = () => {
                       {formatRecommendation(ranking.recommendationLevel)} ({ranking.overallScore ?? 75}/100)
                     </span>
                   </p>
+                  <div className="activity-selector-row">
+                    <span className="activity-selector-label">Modo:</span>
+                    <div className="activity-pills" role="radiogroup" aria-label="Selecione o modo de atividade">
+                      {[
+                        { type: ActivityType.OUTDOOR_SIGHTSEEING, label: 'Passeios' },
+                        { type: ActivityType.BEACH_DAY, label: 'Praia & Banho' },
+                        { type: ActivityType.SURFING, label: 'Surf' },
+                      ].map((act) => (
+                        <button
+                          key={act.type}
+                          type="button"
+                          className={`activity-pill-btn ${selectedActivity === act.type ? 'active' : ''}`}
+                          onClick={() => {
+                            setSelectedActivity(act.type);
+                            fetchData(activeCity, act.type);
+                          }}
+                          data-testid={`activity-pill-${act.type.toLowerCase().replace(/_/g, '-')}`}
+                          aria-checked={selectedActivity === act.type}
+                          role="radio"
+                        >
+                          {act.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <div className="hero-weather-metrics">
                   <div className="metric-pill">

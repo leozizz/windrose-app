@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
+import { PoiCategory } from '@windrose/shared-types';
 import { PlacesService } from '../core/places/places.service';
 import { CURATED_CITY_POIS } from '../infrastructure/places/curated-fallbacks';
 
@@ -14,13 +15,14 @@ export const placesRouter = new Hono()
         lat: z.coerce.number().min(-90).max(90),
         lon: z.coerce.number().min(-180).max(180),
         limit: z.coerce.number().min(5).max(50).default(20),
+        category: z.nativeEnum(PoiCategory).optional(),
       })
     ),
     async (c) => {
-      const { city, lat, lon, limit } = c.req.valid('query');
+      const { city, lat, lon, limit, category } = c.req.valid('query');
 
       try {
-        const deck = await PlacesService.getDeckForCity(city, lat, lon, limit);
+        const deck = await PlacesService.getDeckForCity(city, lat, lon, limit, category);
 
         // Edge Caching: 1 day in browser, 7 days in Cloudflare Edge CDN
         c.header('Cache-Control', 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400');
@@ -30,6 +32,7 @@ export const placesRouter = new Hono()
             city,
             coordinates: { lat, lon },
             total: deck.length,
+            category,
             deck,
           },
           200

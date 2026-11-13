@@ -136,5 +136,37 @@ describe('Activity Evaluators Domain Logic', () => {
       expect(ranking.recommendationLevel).toBe('EXCELLENT');
       expect(ranking.dailyScores).toHaveLength(2);
     });
+
+    it('deve calcular adequadamente a pontuação consolidada para ActivityType.BEACH_DAY', () => {
+      const mockWeather: LocationWeatherInfo = {
+        latitude: -27.59,
+        longitude: -48.54,
+        cityName: 'Florianópolis',
+        timezone: 'America/Sao_Paulo',
+        daily: [
+          {
+            date: '2026-11-15',
+            temperatureMax: 29,
+            temperatureMin: 22,
+            apparentTemperatureMax: 30,
+            apparentTemperatureMin: 22,
+            precipitationSum: 0,
+            weatherCode: 0,
+            maxWindSpeed: 10,
+            waveHeightMax: 0.9,
+            wavePeriodMax: 9,
+          },
+        ],
+      };
+
+      const ranking = ScoringService.calculateScore(
+        mockWeather,
+        ActivityType.BEACH_DAY
+      );
+
+      expect(ranking.activity).toBe(ActivityType.BEACH_DAY);
+      expect(ranking.overallScore).toBeGreaterThanOrEqual(85);
+      expect(ranking.recommendationLevel).toBe('EXCELLENT');
+    });
   });
 });

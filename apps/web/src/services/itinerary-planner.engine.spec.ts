@@ -5,6 +5,8 @@ import {
   DailyScore,
   PoiCategory,
   PoiEnvironment,
+  BeachProfileType,
+  CrowdLevel,
 } from '@windrose/shared-types';
 
 describe('ItineraryPlannerEngine', () => {
@@ -107,5 +109,90 @@ describe('ItineraryPlannerEngine', () => {
 
     expect(itinerary.totalPlacesScheduled).toBe(0);
     expect(itinerary.days).toEqual([]);
+  });
+
+  it('deve priorizar praias seguras para banho e adicionar nota explicativa balnear', () => {
+    const safeBeach: PointOfInterest = {
+      id: 'beach-safe',
+      name: 'Praia da Enseada',
+      category: PoiCategory.BEACH,
+      environment: PoiEnvironment.OUTDOOR,
+      latitude: -23.43,
+      longitude: -45.07,
+      city: 'Ubatuba',
+      description: 'Mar calmo',
+      imageUrl: 'https://example.com/enseada.jpg',
+      tags: ['Família'],
+      beachMetadata: {
+        profile: BeachProfileType.CALM_WATERS,
+        crowdEstimate: CrowdLevel.MODERATE,
+        lifeguardAvailable: true,
+        swimmingSuitabilityScore: 95,
+        waveConditions: {
+          heightMeters: 0.6,
+          periodSeconds: 7,
+          safeForSwimming: true,
+        },
+      },
+    };
+
+    const itinerary = ItineraryPlannerEngine.buildSmartItinerary(
+      'Ubatuba',
+      [safeBeach, mockLikedPois[1]], // Praia segura + Museu
+      mockDailyScores
+    );
+
+    const sunnyDay = itinerary.days.find((d) => d.date === '2026-10-23');
+    const beachSlot = sunnyDay?.slots.find((s) => s.place.id === 'beach-safe');
+    expect(beachSlot).toBeDefined();
+    expect(beachSlot?.weatherOptimizationNote).toContain('balnear');
+  });
+
+  it('não deve agendar praias em dias de clima chuvoso ou adverso', () => {
+    const safeBeach: PointOfInterest = {
+      id: 'beach-safe',
+      name: 'Praia da Enseada',
+      category: PoiCategory.BEACH,
+      environment: PoiEnvironment.OUTDOOR,
+      latitude: -23.43,
+      longitude: -45.07,
+      city: 'Ubatuba',
+      description: 'Mar calmo',
+      imageUrl: 'https://example.com/enseada.jpg',
+      tags: ['Família'],
+      beachMetadata: {
+        profile: BeachProfileType.CALM_WATERS,
+        crowdEstimate: CrowdLevel.MODERATE,
+        lifeguardAvailable: true,
+        swimmingSuitabilityScore: 90,
+        waveConditions: {
+          heightMeters: 0.5,
+          periodSeconds: 6,
+          safeForSwimming: true,
+        },
+      },
+    };
+
+    // Apenas 1 dia, e esse dia é chuvoso (score: 25)
+    const rainyOnlyScores: DailyScore[] = [
+      {
+        date: '2026-10-24',
+        score: 25,
+        recommendationLevel: 'POOR',
+        reasons: ['Chuva forte e mar revolto'],
+      },
+    ];
+
+    const itinerary = ItineraryPlannerEngine.buildSmartItinerary(
+      'Ubatuba',
+      [safeBeach, mockLikedPois[1]], // Praia + Museu
+      rainyOnlyScores
+    );
+
+    const rainyDay = itinerary.days[0];
+    const beachSlot = rainyDay.slots.find((s) => s.place.category === PoiCategory.BEACH);
+    expect(beachSlot).toBeUndefined(); // Praia não deve ser agendada no dia chuvoso
+    const museumSlot = rainyDay.slots.find((s) => s.place.id === 'poi-museum');
+    expect(museumSlot).toBeDefined();
   });
 });
