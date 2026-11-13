@@ -104,7 +104,7 @@ async function getOpenGitHubIssues() {
 }
 
 function extractGitHubNumber(paperclipIssue) {
-  const match = paperclipIssue.title?.match(/^\[#(\d+)\]/);
+  const match = paperclipIssue.title?.match(/\[(?:GH-)?#(\d+)\]/);
   return match ? Number(match[1]) : null;
 }
 
