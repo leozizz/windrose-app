@@ -1,10 +1,19 @@
 #!/usr/bin/env node
 /**
  * Windrose Paperclip Task Helper
- * Usage:
- *   node scripts/paperclip-task.mjs handoff <pm|tech-lead|backend|frontend|ux-reviewer|qa|devops> "<message>" [issueIdOrIdentifier]
- *   node scripts/paperclip-task.mjs status <todo|in_progress|blocked|done|cancelled> "<message>" [issueIdOrIdentifier]
- *   node scripts/paperclip-task.mjs comment "<message>" [issueIdOrIdentifier]
+ * Supports both flag-based and positional arguments:
+ *
+ * Flag style (recommended in AGENTS.md):
+ *   node scripts/paperclip-task.mjs --assign <role> --comment "<message>" [--issue <id>]
+ *   node scripts/paperclip-task.mjs handoff --assign <role> --comment "<message>" [--issue <id>]
+ *   node scripts/paperclip-task.mjs --status <status> [--comment "<message>"] [--issue <id>]
+ *   node scripts/paperclip-task.mjs --comment "<message>" [--issue <id>]
+ *
+ * Positional style:
+ *   node scripts/paperclip-task.mjs handoff <role> "<message>" [issueId]
+ *   node scripts/paperclip-task.mjs <role> "<message>" [issueId]
+ *   node scripts/paperclip-task.mjs status <status> "<message>" [issueId]
+ *   node scripts/paperclip-task.mjs comment "<message>" [issueId]
  */
 
 const rawApiUrl = process.env.PAPERCLIP_API_URL || 'http://127.0.0.1:3100/api';
@@ -32,7 +41,7 @@ const ALIASES = {
   ops: 'devops',
 };
 
-async function api(path, options = {}) {
+const api = async (path, options = {}) => {
   const res = await fetch(`${PAPERCLIP_API}${path}`, {
     ...options,
     headers: {
@@ -51,9 +60,9 @@ async function api(path, options = {}) {
     throw new Error(`${options.method || 'GET'} ${path} -> HTTP ${res.status}: ${typeof data === 'string' ? data : JSON.stringify(data)}`);
   }
   return data;
-}
+};
 
-async function resolveWindroseIssue(explicitRef) {
+const resolveWindroseIssue = async (explicitRef) => {
   const allIssues = await api(`/companies/${COMPANY_ID}/issues`);
   const projectIssues = allIssues.filter((issue) => issue.projectId === PROJECT_ID);
 
@@ -77,49 +86,143 @@ async function resolveWindroseIssue(explicitRef) {
   }
   const summary = active.map((i) => `${i.identifier} (${i.status}): ${i.title}`).join('\n  - ');
   throw new Error(`Multiple active Windrose issues found. Specify one explicitly:\n  - ${summary}`);
-}
+};
 
-function resolveAgentKey(raw) {
+const resolveAgentKey = (raw) => {
   const normalized = (raw || '').toLowerCase().trim();
   const key = ALIASES[normalized] || normalized;
   if (!AGENTS[key]) {
     throw new Error(`Unknown agent "${raw}". Valid keys: ${Object.keys(AGENTS).join(', ')}`);
   }
   return { key, id: AGENTS[key] };
-}
+};
 
-async function postComment(issueId, body) {
+const postComment = async (issueId, body) => {
   return api(`/issues/${issueId}/comments`, {
     method: 'POST',
     body: JSON.stringify({ body }),
   });
-}
+};
 
-async function main() {
-  const args = process.argv.slice(2);
-  const command = args[0];
+const parseArgs = (args) => {
+  const parsed = {
+    command: null,
+    assign: null,
+    comment: null,
+    status: null,
+    issue: null,
+    positionals: [],
+  };
 
-  if (!command || command === '--help' || command === '-h') {
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg === '--assign' && args[i + 1]) {
+      parsed.assign = args[++i];
+    } else if (arg.startsWith('--assign=')) {
+      parsed.assign = arg.slice('--assign='.length);
+    } else if (arg === '--comment' && args[i + 1]) {
+      parsed.comment = args[++i];
+    } else if (arg.startsWith('--comment=')) {
+      parsed.comment = arg.slice('--comment='.length);
+    } else if (arg === '--status' && args[i + 1]) {
+      parsed.status = args[++i];
+    } else if (arg.startsWith('--status=')) {
+      parsed.status = arg.slice('--status='.length);
+    } else if (arg === '--issue' && args[i + 1]) {
+      parsed.issue = args[++i];
+    } else if (arg.startsWith('--issue=')) {
+      parsed.issue = arg.slice('--issue='.length);
+    } else if (arg.startsWith('--')) {
+      // ignore unknown flag
+    } else {
+      parsed.positionals.push(arg);
+    }
+  }
+
+  return parsed;
+};
+
+const main = async () => {
+  const rawArgs = process.argv.slice(2);
+  if (rawArgs.length === 0 || rawArgs.includes('--help') || rawArgs.includes('-h')) {
     console.log(`
 Windrose Paperclip Task Helper
-Commands:
-  handoff <agent> "<message>" [issueId]   Pass issue to next persona and set status=todo
-  status <status> "<message>" [issueId]   Update issue status (todo|in_progress|blocked|done|cancelled)
-  comment "<message>" [issueId]           Add comment to active Windrose issue
+
+Usage (Flags - Recommended in AGENTS.md):
+  node scripts/paperclip-task.mjs --assign <role> --comment "<message>" [--issue <id>]
+  node scripts/paperclip-task.mjs --status <status> [--comment "<message>"] [--issue <id>]
+  node scripts/paperclip-task.mjs --comment "<message>" [--issue <id>]
+
+Usage (Positional):
+  node scripts/paperclip-task.mjs handoff <role> "<message>" [issueId]
+  node scripts/paperclip-task.mjs <role> "<message>" [issueId]
+  node scripts/paperclip-task.mjs status <status> "<message>" [issueId]
+  node scripts/paperclip-task.mjs comment "<message>" [issueId]
 
 Agents: ${Object.keys(AGENTS).join(', ')}
+Valid Statuses: backlog, todo, in_progress, in_review, blocked, done, cancelled
 `);
     return;
   }
 
-  const normalizedFirst = command.toLowerCase().trim();
+  const parsed = parseArgs(rawArgs);
+
+  // 1. Flag-driven handoff (--assign <role>)
+  if (parsed.assign) {
+    const message = parsed.comment || 'Handoff via task runner';
+    const target = resolveAgentKey(parsed.assign);
+    const issue = await resolveWindroseIssue(parsed.issue);
+
+    await postComment(issue.id, `**Handoff -> ${target.key}**\n\n${message}`);
+    await api(`/issues/${issue.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        status: 'todo',
+        assigneeAgentId: target.id,
+      }),
+    });
+
+    console.log(`Handoff complete: ${issue.identifier} -> Windrose | ${target.key} (${target.id})`);
+    return;
+  }
+
+  // 2. Flag-driven status update (--status <status>)
+  if (parsed.status) {
+    const valid = ['backlog', 'todo', 'in_progress', 'in_review', 'blocked', 'done', 'cancelled'];
+    if (!valid.includes(parsed.status)) {
+      throw new Error(`Invalid status "${parsed.status}". Valid: ${valid.join(', ')}`);
+    }
+    const issue = await resolveWindroseIssue(parsed.issue);
+    if (parsed.comment) {
+      await postComment(issue.id, `**Status -> ${parsed.status}**\n\n${parsed.comment}`);
+    }
+    await api(`/issues/${issue.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: parsed.status }),
+    });
+    console.log(`Updated ${issue.identifier} status -> ${parsed.status}`);
+    return;
+  }
+
+  // 3. Flag-driven comment only (--comment <message>)
+  if (parsed.comment && parsed.positionals.length === 0) {
+    const issue = await resolveWindroseIssue(parsed.issue);
+    await postComment(issue.id, parsed.comment);
+    console.log(`Comment posted on ${issue.identifier}`);
+    return;
+  }
+
+  // 4. Positional fallback handling
+  const first = parsed.positionals[0];
+  const normalizedFirst = (first || '').toLowerCase().trim();
   const isShorthandAgent = Boolean(AGENTS[normalizedFirst] || ALIASES[normalizedFirst]);
 
-  if (command === 'handoff' || isShorthandAgent) {
-    const [, a1, a2, a3] = args;
-    const rawAgent = isShorthandAgent ? command : a1;
-    const message = isShorthandAgent ? a1 : a2;
-    const issueRef = isShorthandAgent ? a2 : a3;
+  if (first === 'handoff' || isShorthandAgent) {
+    const rawAgent = isShorthandAgent ? first : parsed.positionals[1];
+    const message = isShorthandAgent ? parsed.positionals[1] : parsed.positionals[2];
+    const issueRef = parsed.issue || (isShorthandAgent ? parsed.positionals[2] : parsed.positionals[3]);
+
     if (!rawAgent || !message) {
       throw new Error('Usage: [handoff] <agent> "<message>" [issueIdOrIdentifier]');
     }
@@ -139,8 +242,10 @@ Agents: ${Object.keys(AGENTS).join(', ')}
     return;
   }
 
-  if (command === 'status') {
-    const [, newStatus, message, issueRef] = args;
+  if (first === 'status') {
+    const newStatus = parsed.positionals[1];
+    const message = parsed.positionals[2];
+    const issueRef = parsed.issue || parsed.positionals[3];
     const valid = ['backlog', 'todo', 'in_progress', 'in_review', 'blocked', 'done', 'cancelled'];
     if (!valid.includes(newStatus)) {
       throw new Error(`Invalid status "${newStatus}". Valid: ${valid.join(', ')}`);
@@ -157,8 +262,9 @@ Agents: ${Object.keys(AGENTS).join(', ')}
     return;
   }
 
-  if (command === 'comment') {
-    const [, message, issueRef] = args;
+  if (first === 'comment') {
+    const message = parsed.positionals[1];
+    const issueRef = parsed.issue || parsed.positionals[2];
     if (!message) {
       throw new Error('Usage: comment "<message>" [issueIdOrIdentifier]');
     }
@@ -168,8 +274,8 @@ Agents: ${Object.keys(AGENTS).join(', ')}
     return;
   }
 
-  throw new Error(`Unknown command "${command}". Run with --help for usage.`);
-}
+  throw new Error(`Unknown command or arguments: "${rawArgs.join(' ')}". Run with --help for usage.`);
+};
 
 main().catch((err) => {
   console.error('❌ paperclip-task error:', err.message || err);

@@ -18,9 +18,11 @@
     "standards:discover": "node tools/agent-standards/bin/agent-standards.mjs discover",
     "task:handoff": "node scripts/paperclip-task.mjs",
     "sync:status": "node scripts/paperclip-sync.mjs --status",
-    "sync:board": "node scripts/paperclip-sync.mjs --sync",
+    "sync:board": "node scripts/paperclip-sync.mjs --board",
+    "sync:sync": "node scripts/paperclip-sync.mjs --sync",
     "sync:dispatch": "node scripts/paperclip-sync.mjs --dispatch-next",
-    "sync:close": "node scripts/paperclip-sync.mjs --close-current"
+    "sync:close": "node scripts/paperclip-sync.mjs --close-current",
+    "task:unblock": "node scripts/paperclip-unblock.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.8.0",
