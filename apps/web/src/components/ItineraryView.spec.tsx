@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ItineraryView } from './ItineraryView';
@@ -58,6 +59,7 @@ describe('ItineraryView Component', () => {
     expect(screen.getByText(/Leve seu guia de viagem no bolso/i)).toBeDefined();
     const qrImg = screen.getByRole('img', { name: /QR Code para roteiro em Florianópolis/i });
     expect(qrImg).toBeDefined();
+    expect(screen.getByTestId('itinerary-companion-maps-link')).toBeDefined();
   });
 
   it('deve exibir fallback amigável caso o QR code falhe ao carregar', () => {
@@ -69,30 +71,39 @@ describe('ItineraryView Component', () => {
     expect(screen.getByTestId('qr-fallback')).toBeDefined();
   });
 
-  it('deve invocar o download do arquivo .ics ao clicar no botão de calendário', () => {
+  it('deve invocar o download do arquivo .ics ao clicar no botão de calendário com data-testid', () => {
     const downloadSpy = vi.spyOn(CalendarExporter, 'downloadIcsFile').mockImplementation(() => {});
 
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    const calBtn = screen.getByRole('button', { name: /Exportar Calendário \(\.ICS\)/i });
+    const calBtn = screen.getByTestId('itinerary-export-ics-btn');
+    expect(calBtn.getAttribute('style')).toBeNull();
     fireEvent.click(calBtn);
 
     expect(downloadSpy).toHaveBeenCalledTimes(1);
     expect(downloadSpy).toHaveBeenCalledWith(mockItinerary);
   });
 
-  it('deve disparar window.print ao clicar no botão de impressão de PDF', () => {
+  it('deve disparar window.print ao clicar no botão de impressão de PDF com data-testid', () => {
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => {});
 
     render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
 
-    const printBtn = screen.getByRole('button', { name: /Baixar PDF do Roteiro/i });
+    const printBtn = screen.getByTestId('itinerary-print-pdf-btn');
+    expect(printBtn.getAttribute('style')).toBeNull();
     fireEvent.click(printBtn);
 
     expect(printSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('deve exibir estado vazio com botão de voltar caso não haja dias agendados', () => {
+  it('deve renderizar links de POI com data-testid', () => {
+    render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+    const poiLink = screen.getByTestId('period-poi-maps-link');
+    expect(poiLink).toBeDefined();
+  });
+
+  it('deve exibir estado vazio com botão de voltar com data-testid caso não haja dias agendados', () => {
     const handleBack = vi.fn();
     render(
       <ItineraryView
@@ -102,7 +113,7 @@ describe('ItineraryView Component', () => {
     );
 
     expect(screen.getByText(/Nenhum roteiro gerado ainda/i)).toBeDefined();
-    const backBtn = screen.getByRole('button', { name: /Explorar Lugares no Swipe/i });
+    const backBtn = screen.getByTestId('itinerary-empty-explore-btn');
     fireEvent.click(backBtn);
     expect(handleBack).toHaveBeenCalledTimes(1);
   });

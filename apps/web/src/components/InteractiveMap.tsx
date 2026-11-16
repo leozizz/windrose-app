@@ -13,7 +13,7 @@ interface InteractiveMapProps {
 }
 
 // Custom Category SVG Marker Icons
-function createCustomPin(category: PoiCategory): L.DivIcon {
+const createCustomPin = (category: PoiCategory): L.DivIcon => {
   let color = '#f97316'; // Terracotta default
   let svgPath = '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>';
 
@@ -81,10 +81,10 @@ function createCustomPin(category: PoiCategory): L.DivIcon {
     iconAnchor: [17, 34],
     popupAnchor: [0, -34],
   });
-}
+};
 
 // Auto-adjust map bounds to frame all points
-function FitBoundsToMarkers({ places }: { places: PointOfInterest[] }) {
+const FitBoundsToMarkers: React.FC<{ places: PointOfInterest[] }> = ({ places }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -115,13 +115,13 @@ function FitBoundsToMarkers({ places }: { places: PointOfInterest[] }) {
   }, [places, map]);
 
   return null;
-}
+};
 
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   places,
   center,
   zoom = 13,
-  height = '420px',
+  height,
 }) => {
   const validPlaces = places.filter(
     (p) => typeof p.latitude === 'number' && typeof p.longitude === 'number'
@@ -133,22 +133,20 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     ? [validPlaces[0].latitude, validPlaces[0].longitude]
     : [-27.5954, -48.548];
 
+  const customHeightStyle = height
+    ? ({ '--map-custom-height': height } as React.CSSProperties)
+    : undefined;
+
   return (
     <div
       className="interactive-map-wrapper"
-      style={{
-        height, width: '100%', position: 'relative', zIndex: 1, isolation: 'isolate',
-        borderRadius: 'var(--radius-xl, 24px)',
-        overflow: 'hidden',
-        boxShadow: 'var(--shadow-card)',
-        border: '1px solid var(--border-light)',
-      }}
+      style={customHeightStyle}
     >
       <MapContainer
         center={defaultCenter}
         zoom={zoom}
         scrollWheelZoom={false}
-        style={{ height: '100%', width: '100%' }}
+        className="map-container-inner"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
@@ -170,27 +168,21 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
               icon={createCustomPin(place.category)}
             >
               <Popup className="windrose-map-popup">
-                <div style={{ maxWidth: '240px', padding: '0.25rem' }}>
+                <div className="windrose-map-popup-body">
                   {place.imageUrl && (
                     <img
                       src={place.imageUrl}
                       alt={place.name}
-                      style={{
-                        width: '100%',
-                        height: '110px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        marginBottom: '0.5rem',
-                      }}
+                      className="windrose-map-popup-img"
                       loading="lazy"
                     />
                   )}
-                  <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1rem', fontWeight: 700 }}>
+                  <h4 className="windrose-map-popup-title">
                     {place.name}
                   </h4>
                   {place.address && (
-                    <p style={{ margin: '0 0 0.5rem 0', fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <MapPin size={13} style={{ flexShrink: 0, color: 'var(--primary, #f97316)' }} />
+                    <p className="windrose-map-popup-address">
+                      <MapPin size={13} className="windrose-popup-address-icon" />
                       <span>{place.address}</span>
                     </p>
                   )}
@@ -198,21 +190,11 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
                     href={googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      background: 'var(--primary, #f97316)',
-                      color: '#ffffff',
-                      textDecoration: 'none',
-                      fontSize: '0.75rem',
-                      fontWeight: 600,
-                      padding: '0.35rem 0.75rem',
-                      borderRadius: '9999px',
-                    }}
+                    className="windrose-map-popup-link"
+                    data-testid="map-route-link"
                   >
                     <span>Rotas no Google Maps</span>
-                    <ExternalLink size={12} />
+                    <ExternalLink size={12} className="windrose-popup-link-icon" />
                   </a>
                 </div>
               </Popup>
@@ -223,4 +205,3 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
     </div>
   );
 };
-
