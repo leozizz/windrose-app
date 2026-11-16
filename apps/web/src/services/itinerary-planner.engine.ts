@@ -7,6 +7,7 @@ import {
   PoiEnvironment,
   PoiCategory,
 } from '@windrose/shared-types';
+import { TravelDistanceCalculator } from './travel-distance.calculator';
 
 export class ItineraryPlannerEngine {
   /**
@@ -205,6 +206,19 @@ export class ItineraryPlannerEngine {
           place: eveningPlace,
           weatherOptimizationNote: '🍷 Jantar e entretenimento noturno',
         });
+      }
+
+      // Calcula estimativa de deslocamento entre atrações consecutivas do mesmo dia
+      for (let i = 1; i < slots.length; i++) {
+        const prevPlace = slots[i - 1].place;
+        const currentPlace = slots[i].place;
+        const transit = TravelDistanceCalculator.calculateTransitEstimate(
+          prevPlace,
+          currentPlace
+        );
+        if (transit) {
+          slots[i].transitFromPrevious = transit;
+        }
       }
 
       return {

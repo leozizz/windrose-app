@@ -186,3 +186,6 @@ vitest.config.*.timestamp*
 # Agent standards review outputs
 REVIEW_REPORT.md
 review-fixes.patch
+
+# Playwright MCP
+.playwright-mcp/

@@ -127,4 +127,64 @@ describe('ItineraryView Component', () => {
     fireEvent.click(backBtn);
     expect(handleBack).toHaveBeenCalledTimes(1);
   });
+
+  describe('Estimativa de deslocamento visual (transitFromPrevious)', () => {
+    it('deve renderizar o badge com data-testid="itinerary-transit-estimate" quando o slot contiver transitFromPrevious', () => {
+      const itineraryWithTransit: TripItinerary = {
+        city: 'Florianópolis',
+        totalPlacesScheduled: 2,
+        days: [
+          {
+            date: '2026-10-23',
+            weekday: 'Sexta-feira',
+            weatherScore: 90,
+            recommendationLevel: 'EXCELLENT',
+            isRainyOrAdverse: false,
+            slots: [
+              mockItinerary.days[0].slots[0],
+              {
+                slot: 'AFTERNOON',
+                slotLabel: 'Tarde',
+                startTime: '14:00',
+                endTime: '17:30',
+                weatherOptimizationNote: 'Visita cultural em museu',
+                transitFromPrevious: {
+                  distanceKm: 11,
+                  walkingMinutes: 138,
+                  drivingMinutes: 26,
+                  formattedDistance: '~11 km',
+                  formattedSummary: '~11 km • 2 h 18 min a pé / 26 min de carro',
+                },
+                place: {
+                  id: 'poi-2',
+                  name: 'Museu Histórico Palácio Cruz e Sousa',
+                  category: PoiCategory.MUSEUM,
+                  environment: PoiEnvironment.INDOOR,
+                  latitude: -27.59,
+                  longitude: -48.54,
+                  city: 'Florianópolis',
+                  description: 'Museu histórico no centro',
+                  imageUrl: 'https://example.com/museum.jpg',
+                  tags: ['Cultura'],
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      render(<ItineraryView itinerary={itineraryWithTransit} onBackToSwipe={vi.fn()} />);
+
+      const transitBadge = screen.getByTestId('itinerary-transit-estimate');
+      expect(transitBadge).toBeDefined();
+      expect(transitBadge.textContent).toContain('~11 km • 2 h 18 min a pé / 26 min de carro');
+    });
+
+    it('não deve exibir estimativa de deslocamento para o primeiro slot (manhã)', () => {
+      render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+      const transitBadge = screen.queryByTestId('itinerary-transit-estimate');
+      expect(transitBadge).toBeNull();
+    });
+  });
 });
