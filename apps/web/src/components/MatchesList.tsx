@@ -33,23 +33,23 @@ export const MatchesList: React.FC<MatchesListProps> = ({
         </div>
         <div className="matches-actions-group">
           {matches.length > 0 && (
-            <div className="nav-tabs" style={{ padding: '0.2rem', boxShadow: 'none' }}>
+            <div className="nav-tabs matches-nav-tabs">
               <button
                 type="button"
-                className={`nav-tab-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center' }}
+                className={`nav-tab-btn matches-nav-tab-btn ${viewMode === 'grid' ? 'active' : ''}`}
                 onClick={() => setViewMode('grid')}
+                data-testid="matches-view-grid-tab"
               >
-                <LayoutGrid size={15} style={{ marginRight: '6px' }} />
+                <LayoutGrid size={15} className="btn-icon-start" />
                 <span>Grade</span>
               </button>
               <button
                 type="button"
-                className={`nav-tab-btn ${viewMode === 'map' ? 'active' : ''}`}
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center' }}
+                className={`nav-tab-btn matches-nav-tab-btn ${viewMode === 'map' ? 'active' : ''}`}
                 onClick={() => setViewMode('map')}
+                data-testid="matches-view-map-tab"
               >
-                <Map size={15} style={{ marginRight: '6px' }} />
+                <Map size={15} className="btn-icon-start" />
                 <span>Mapa</span>
               </button>
             </div>
@@ -59,9 +59,9 @@ export const MatchesList: React.FC<MatchesListProps> = ({
             type="button"
             className="action-button-secondary"
             onClick={onBackToSwipe}
-            style={{ display: 'inline-flex', alignItems: 'center' }}
+            data-testid="matches-back-swipe-btn"
           >
-            <ArrowLeft size={16} style={{ marginRight: '6px' }} />
+            <ArrowLeft size={16} className="btn-icon-start" />
             <span>Continuar Explorando</span>
           </button>
           {matches.length > 0 && (
@@ -70,9 +70,9 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 type="button"
                 className="action-button-primary"
                 onClick={onGenerateItinerary}
-                style={{ display: 'inline-flex', alignItems: 'center' }}
+                data-testid="matches-generate-itinerary-btn"
               >
-                <Sparkles size={16} style={{ marginRight: '6px' }} />
+                <Sparkles size={16} className="btn-icon-start" />
                 <span>Gerar Roteiro Personalizado →</span>
               </button>
               <button
@@ -80,9 +80,9 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 className="action-button-danger"
                 onClick={onClearMatches}
                 title="Limpar todos os matches desta cidade"
-                style={{ display: 'inline-flex', alignItems: 'center' }}
+                data-testid="matches-clear-btn"
               >
-                <Trash2 size={14} style={{ marginRight: '4px' }} />
+                <Trash2 size={14} className="btn-icon-start" />
                 <span>Limpar</span>
               </button>
             </>
@@ -93,7 +93,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
       {matches.length === 0 ? (
         <div className="empty-deck-card">
           <div className="empty-deck-icon">
-            <Compass size={44} style={{ color: 'var(--primary)' }} />
+            <Compass size={44} />
           </div>
           <h3>Nenhum local curtido ainda</h3>
           <p>Explore as atrações e dê match nos locais que você mais gostar para montar seu roteiro!</p>
@@ -101,12 +101,13 @@ export const MatchesList: React.FC<MatchesListProps> = ({
             type="button"
             className="action-button-primary"
             onClick={onBackToSwipe}
+            data-testid="matches-empty-explore-btn"
           >
             Começar a Explorar →
           </button>
         </div>
       ) : viewMode === 'map' ? (
-        <div style={{ marginTop: '1rem' }}>
+        <div className="matches-map-container">
           <InteractiveMap places={matches} height="520px" />
         </div>
       ) : (
@@ -128,7 +129,7 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 <h3 className="match-card-title">{poi.name}</h3>
                 {poi.address && (
                   <p className="match-card-address">
-                    <MapPin size={13} style={{ flexShrink: 0, opacity: 0.9 }} />
+                    <MapPin size={13} className="address-pin-icon" />
                     <span>{poi.address}</span>
                   </p>
                 )}
@@ -136,12 +137,12 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                 <div className="match-card-footer">
                   <span className="environment-tag">
                     {poi.environment === 'OUTDOOR' ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="match-card-environment-badge">
                         <Sun size={12} />
                         <span>Ao Ar Livre</span>
                       </span>
                     ) : (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="match-card-environment-badge">
                         <Landmark size={12} />
                         <span>Coberto</span>
                       </span>
@@ -152,8 +153,8 @@ export const MatchesList: React.FC<MatchesListProps> = ({
                       href={poi.website}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="action-button-secondary"
-                      style={{ padding: '0.25rem 0.65rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                      className="action-button-secondary match-card-website-btn"
+                      data-testid="match-card-website-link"
                     >
                       <span>Site</span>
                       <ExternalLink size={11} />

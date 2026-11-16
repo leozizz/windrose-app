@@ -978,6 +978,10 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 1rem;
 }
 
+.empty-deck-icon svg {
+  color: var(--primary);
+}
+
 .empty-deck-card h3 {
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
@@ -1059,6 +1063,8 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
 }
 
 .action-button-secondary:hover {
@@ -1077,6 +1083,8 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
 }
 
 .action-button-danger:hover {
@@ -1264,21 +1272,25 @@ h1, h2, h3, h4, h5, h6 {
   gap: 0.75rem;
 }
 
-.btn-print {
-  background: var(--primary) !important;
-  color: #ffffff !important;
+.itinerary-actions-row .btn-print {
+  background: var(--primary);
+  color: #ffffff;
   font-weight: 700;
   box-shadow: 0 4px 14px rgba(234, 88, 12, 0.35);
+  display: inline-flex;
+  align-items: center;
 }
 
-.btn-calendar {
-  background: rgba(255, 255, 255, 0.12) !important;
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
+.itinerary-actions-row .btn-calendar {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
 }
 
-.btn-calendar:hover {
-  background: rgba(255, 255, 255, 0.2) !important;
+.itinerary-actions-row .btn-calendar:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* QR Code Companion Card */
@@ -1376,9 +1388,143 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .interactive-map-wrapper {
+  height: var(--map-custom-height, 420px);
+  width: 100%;
   position: relative;
   z-index: 1;
   isolation: isolate;
+  border-radius: var(--radius-xl, 24px);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+}
+
+.map-container-inner {
+  height: 100%;
+  width: 100%;
+}
+
+.windrose-map-popup-body {
+  max-width: 240px;
+  padding: 0.25rem;
+}
+
+.windrose-map-popup-img {
+  width: 100%;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+}
+
+.windrose-map-popup-title {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.windrose-map-popup-address {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--text-muted, #64748b);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.windrose-popup-address-icon {
+  flex-shrink: 0;
+  color: var(--primary, #f97316);
+}
+
+.windrose-map-popup-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--primary, #f97316);
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  transition: background var(--transition-fast, 0.15s ease);
+}
+
+.windrose-map-popup-link:hover {
+  background: var(--primary-hover, #ea580c);
+}
+
+.windrose-popup-link-icon {
+  flex-shrink: 0;
+}
+
+/* Ícones e Ações Utilitárias */
+.btn-icon-start {
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.btn-icon-end {
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.weather-badge-icon {
+  margin-right: 4px;
+  display: inline;
+  vertical-align: middle;
+}
+
+.footer-tip-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.companion-qr-fallback-icon {
+  color: var(--text-muted);
+}
+
+.itinerary-map-title-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.period-poi-maps-icon {
+  margin-left: 4px;
+}
+
+/* Classes para MatchesList */
+.matches-nav-tabs {
+  padding: 0.2rem;
+  box-shadow: none;
+}
+
+.matches-nav-tab-btn {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.matches-map-container {
+  margin-top: 1rem;
+}
+
+.match-card-website-btn {
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.match-card-environment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .section-header-flex {
@@ -1621,6 +1767,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .address-pin-icon {
   font-size: 0.85rem;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
+.note-icon {
+  flex-shrink: 0;
 }
 
 .period-poi-desc {
@@ -2056,7 +2208,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .interactive-map-wrapper {
-    height: clamp(280px, 46vh, 400px) !important;
+    height: clamp(280px, 46vh, 400px);
   }
 }
 

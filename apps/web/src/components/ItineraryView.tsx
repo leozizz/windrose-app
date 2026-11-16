@@ -44,7 +44,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     return (
       <div className="empty-deck-card">
         <div className="empty-deck-icon">
-          <Map size={44} style={{ color: 'var(--primary)' }} />
+          <Map size={44} />
         </div>
         <h3>Nenhum roteiro gerado ainda</h3>
         <p>
@@ -55,6 +55,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           type="button"
           className="action-button-primary"
           onClick={onBackToSwipe}
+          data-testid="itinerary-empty-explore-btn"
         >
           Explorar Lugares no Swipe →
         </button>
@@ -127,9 +128,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               className="action-button-primary btn-print"
               onClick={handlePrintPdf}
               title="Salvar como PDF ou Imprimir este roteiro"
-              style={{ display: 'inline-flex', alignItems: 'center' }}
+              data-testid="itinerary-print-pdf-btn"
             >
-              <FileDown size={17} style={{ marginRight: '6px' }} />
+              <FileDown size={17} className="btn-icon-start" />
               <span>Baixar PDF do Roteiro</span>
             </button>
             <button
@@ -137,9 +138,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
               className="action-button-secondary btn-calendar"
               onClick={handleDownloadIcs}
               title="Adicionar horários e paradas à sua agenda do celular"
-              style={{ display: 'inline-flex', alignItems: 'center' }}
+              data-testid="itinerary-export-ics-btn"
             >
-              <Calendar size={17} style={{ marginRight: '6px' }} />
+              <Calendar size={17} className="btn-icon-start" />
               <span>Exportar Calendário (.ICS)</span>
             </button>
           </div>
@@ -159,7 +160,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             />
           ) : (
             <div className="companion-qr-fallback" data-testid="qr-fallback">
-              <QrCode size={44} style={{ color: 'var(--text-muted)' }} />
+              <QrCode size={44} className="companion-qr-fallback-icon" />
             </div>
           )}
         </div>
@@ -174,9 +175,10 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             className="companion-link no-print"
+            data-testid="itinerary-companion-maps-link"
           >
             <span>Abrir Destino no Google Maps</span>
-            <ExternalLink size={13} style={{ marginLeft: '4px' }} />
+            <ExternalLink size={13} className="btn-icon-end" />
           </a>
         </div>
       </section>
@@ -186,7 +188,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
         <section className="itinerary-map-section no-print">
           <div className="section-header-flex">
             <div>
-              <h3 className="itinerary-section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h3 className="itinerary-section-heading itinerary-map-title-icon">
                 <Map size={20} />
                 <span>Mapa Geral do Roteiro</span>
               </h3>
@@ -225,12 +227,12 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 </span>
                 {day.isRainyOrAdverse ? (
                   <span className="adverse-weather-badge">
-                    <CloudRain size={13} style={{ marginRight: '4px', display: 'inline', verticalAlign: 'middle' }} />
+                    <CloudRain size={13} className="weather-badge-icon" />
                     <span>Otimizado para Chuva</span>
                   </span>
                 ) : (
                   <span className="ideal-weather-badge">
-                    <Sun size={13} style={{ marginRight: '4px', display: 'inline', verticalAlign: 'middle' }} />
+                    <Sun size={13} className="weather-badge-icon" />
                     <span>Ideal ao Ar Livre</span>
                   </span>
                 )}
@@ -279,7 +281,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                         {slot.place.address && (
                           <p className="period-poi-address">
-                            <MapPin size={13} className="address-pin-icon" style={{ flexShrink: 0, opacity: 0.9 }} />
+                            <MapPin size={13} className="address-pin-icon" />
                             <span>{slot.place.address}</span>
                           </p>
                         )}
@@ -288,7 +290,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
 
                         {slot.weatherOptimizationNote && (
                           <div className="period-poi-weather-note">
-                            <Sparkles size={13} className="note-icon" style={{ flexShrink: 0 }} />
+                            <Sparkles size={13} className="note-icon" />
                             <span>{slot.weatherOptimizationNote}</span>
                           </div>
                         )}
@@ -299,9 +301,10 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn-open-maps"
+                            data-testid="period-poi-maps-link"
                           >
                             <span>Abrir no Google Maps</span>
-                            <ExternalLink size={12} style={{ marginLeft: '4px' }} />
+                            <ExternalLink size={12} className="btn-icon-end" />
                           </a>
                         </div>
                       </div>
@@ -317,7 +320,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       {/* Guide Footer */}
       <footer className="itinerary-editorial-footer">
         <div className="footer-tip-box">
-          <Lightbulb size={22} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
+          <Lightbulb size={22} className="footer-tip-icon" />
           <p>
             <strong>Dica do Guia Windrose:</strong> As condições meteorológicas e horários de visitação podem variar.
             Confira a abertura dos atrativos antes do embarque e aproveite sua estadia em {itinerary.city}!
