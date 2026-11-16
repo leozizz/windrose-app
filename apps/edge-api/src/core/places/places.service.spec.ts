@@ -207,4 +207,100 @@ describe('PlacesService Domain Logic', () => {
     expect(deck[0].category).toBe(PoiCategory.BEACH);
     expect(deck[0].beachMetadata).toBeDefined();
   });
+
+  it('deve controlar concorrência em no máximo 4 workers simultâneos ao enriquecer 20 POIs', async () => {
+    const mockPois = Array.from({ length: 20 }, (_, i) => ({
+      id: `osm-poi-${i}`,
+      name: `Atração ${i}`,
+      category: PoiCategory.ATTRACTION,
+      environment: PoiEnvironment.OUTDOOR,
+      latitude: -27.5 + i * 0.01,
+      longitude: -48.5 + i * 0.01,
+      city: 'CidadeSemCuradoria',
+      description: `Descrição ${i}`,
+      imageUrl: 'https://images.unsplash.com/photo-fallback',
+      tags: ['Ponto Turístico'],
+    }));
+
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce(mockPois);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([]);
+
+    let activeConcurrency = 0;
+    let maxConcurrency = 0;
+
+    vi.spyOn(WikimediaClient, 'enrichPlace').mockImplementation(async () => {
+      activeConcurrency++;
+      if (activeConcurrency > maxConcurrency) {
+        maxConcurrency = activeConcurrency;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 15));
+      activeConcurrency--;
+      return { summary: 'Resumo enriquecido', imageUrl: 'https://upload.wikimedia.org/img.jpg' };
+    });
+
+    const deck = await PlacesService.getDeckForCity('CidadeSemCuradoria', -27.59, -48.54, 20);
+
+    expect(deck).toHaveLength(20);
+    expect(maxConcurrency).toBeGreaterThan(0);
+    expect(maxConcurrency).toBeLessThanOrEqual(4);
+  });
+
+  it('deve preservar imagens curadas ou autênticas sem invocar WikimediaClient', async () => {
+    const verifiedPoi = {
+      id: 'custom-poi-verified',
+      name: 'Monumento Histórico Autêntico',
+      category: PoiCategory.ATTRACTION,
+      environment: PoiEnvironment.OUTDOOR,
+      latitude: -27.59,
+      longitude: -48.54,
+      city: 'CidadeSemCuradoria',
+      description: 'Descrição autêntica',
+      imageUrl: 'https://images.unsplash.com/photo-verified-custom-12345?w=800',
+      tags: ['História'],
+    };
+
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce([verifiedPoi]);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([]);
+
+    const enrichSpy = vi.spyOn(WikimediaClient, 'enrichPlace');
+
+    const deck = await PlacesService.getDeckForCity('CidadeSemCuradoria', -27.59, -48.54, 5);
+
+    expect(deck).toHaveLength(1);
+    expect(deck[0].imageUrl).toBe('https://images.unsplash.com/photo-verified-custom-12345?w=800');
+    // Para POI com imagem autêntica verificada (não-placeholder), não deve chamar WikimediaClient
+    expect(enrichSpy).not.toHaveBeenCalled();
+  });
+
+  it('deve manter a ordenação estável e prioritária dos POIs após o enriquecimento concorrente', async () => {
+    const mockPois = Array.from({ length: 10 }, (_, i) => ({
+      id: `poi-order-${i}`,
+      name: `Ordem Atração ${i}`,
+      category: PoiCategory.ATTRACTION,
+      environment: PoiEnvironment.OUTDOOR,
+      latitude: -27.5 + i * 0.01,
+      longitude: -48.5 + i * 0.01,
+      city: 'CidadeSemCuradoria',
+      description: `Descrição original ${i}`,
+      imageUrl: 'https://images.unsplash.com/photo-fallback',
+      tags: ['Ponto Turístico'],
+    }));
+
+    vi.spyOn(NominatimClient, 'fetchCityPois').mockResolvedValueOnce(mockPois);
+    vi.spyOn(OverpassClient, 'fetchNearbyPois').mockResolvedValueOnce([]);
+
+    // Respostas com tempos variados para testar que a ordem de retorno não se perde
+    vi.spyOn(WikimediaClient, 'enrichPlace').mockImplementation(async (name) => {
+      const idx = parseInt(name.replace('Ordem Atração ', ''), 10);
+      const delay = (10 - idx) * 5; // Revert delay
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return { summary: `Resumo ${idx}` };
+    });
+
+    const deck = await PlacesService.getDeckForCity('CidadeSemCuradoria', -27.59, -48.54, 10);
+
+    for (let i = 0; i < 10; i++) {
+      expect(deck[i].name).toBe(`Ordem Atração ${i}`);
+    }
+  });
 });

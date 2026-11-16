@@ -10,9 +10,38 @@ import {
 } from '../../infrastructure/places/curated-fallbacks';
 
 /**
+ * Concurrently maps items using an async worker pool up to concurrencyLimit.
+ * Preserves the exact index order of the resulting array.
+ */
+export const mapWithConcurrency = async <T, R>(
+  items: T[],
+  concurrencyLimit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> => {
+  if (items.length === 0) return [];
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
+
+  const worker = async (): Promise<void> => {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await fn(items[currentIndex], currentIndex);
+    }
+  };
+
+  const poolSize = Math.min(concurrencyLimit, items.length);
+  const workers = Array.from({ length: poolSize }, () => worker());
+  await Promise.all(workers);
+
+  return results;
+};
+
+/**
  * Domain service responsible for assembling, balancing, and enriching POI swipe decks.
  */
 export class PlacesService {
+  private static readonly ENRICHMENT_CONCURRENCY = 4;
+
   /**
    * Get an assembled deck of places for swipe discovery in a destination.
    */
@@ -35,7 +64,7 @@ export class PlacesService {
     let nominatimPois: PointOfInterest[] = [];
     try {
       nominatimPois = await NominatimClient.fetchCityPois(city, lat, lon, limit);
-    } catch {
+    } catch (_err: unknown) {
       nominatimPois = [];
     }
 
@@ -44,7 +73,7 @@ export class PlacesService {
     if (curated.length + nominatimPois.length < limit) {
       try {
         osmPois = await OverpassClient.fetchNearbyPois(lat, lon, city, 12000, limit);
-      } catch {
+      } catch (_err: unknown) {
         osmPois = [];
       }
     }
@@ -77,8 +106,11 @@ export class PlacesService {
     }
 
     // 6. Enrich top attractions with Wikimedia Search API, Thematic Photo Pool & Beach Metadata
-    const enriched = await Promise.all(
-      selectedPois.slice(0, limit).map(async (poi) => {
+    // Processed with controlled concurrency pool (max 4 workers) to respect Cloudflare Workers subrequest limits
+    const enriched = await mapWithConcurrency(
+      selectedPois.slice(0, limit),
+      PlacesService.ENRICHMENT_CONCURRENCY,
+      async (poi) => {
         // Sanitize any residual UPPERCASE category in tags
         const cleanTags = (poi.tags || []).map((t) => {
           if (t === 'ATTRACTION') return 'Ponto Turístico';
@@ -123,7 +155,7 @@ export class PlacesService {
           tags: cleanTags,
           ...(beachMetadata ? { beachMetadata } : {}),
         };
-      })
+      }
     );
 
     return enriched;
