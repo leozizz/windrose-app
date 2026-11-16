@@ -1317,7 +1317,8 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
 }
 
-.companion-qr-image {
+.companion-qr-image,
+.companion-qr-svg {
   width: 110px;
   height: 110px;
   border-radius: var(--radius-sm);
@@ -2332,7 +2333,8 @@ h1, h2, h3, h4, h5, h6 {
     padding: 0.25rem !important;
   }
 
-  .companion-qr-image {
+  .companion-qr-image,
+  .companion-qr-svg {
     width: 80px !important;
     height: 80px !important;
   }

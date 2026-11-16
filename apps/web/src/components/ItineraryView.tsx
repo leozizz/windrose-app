@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Sunrise,
   Sun,
@@ -7,7 +7,6 @@ import {
   Calendar,
   FileDown,
   ExternalLink,
-  QrCode,
   Map,
   CloudRain,
   Sparkles,
@@ -16,6 +15,7 @@ import {
 import { TripItinerary, PoiSlot } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
 import { InteractiveMap } from './InteractiveMap';
+import { QrCodeSvg } from './QrCodeSvg';
 import { formatCategory, formatRecommendation } from '../utils/labels';
 
 interface ItineraryViewProps {
@@ -27,8 +27,6 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   itinerary,
   onBackToSwipe,
 }) => {
-  const [qrError, setQrError] = useState(false);
-
   const handlePrintPdf = () => {
     window.print();
   };
@@ -86,7 +84,6 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     : '';
 
   const mapsQueryUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent('Roteiro ' + itinerary.city)}`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=4&data=${encodeURIComponent(mapsQueryUrl)}`;
 
   return (
     <div className="itinerary-container">
@@ -150,19 +147,12 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       {/* QR Code Companion Card (Both Screen & Print Friendly) */}
       <section className="itinerary-companion-card">
         <div className="companion-qr-wrapper">
-          {!qrError ? (
-            <img
-              src={qrCodeUrl}
-              alt={`QR Code para roteiro em ${itinerary.city}`}
-              className="companion-qr-image"
-              onError={() => setQrError(true)}
-              loading="lazy"
-            />
-          ) : (
-            <div className="companion-qr-fallback" data-testid="qr-fallback">
-              <QrCode size={44} className="companion-qr-fallback-icon" />
-            </div>
-          )}
+          <QrCodeSvg
+            value={mapsQueryUrl}
+            ariaLabel={`QR Code para roteiro em ${itinerary.city}`}
+            dataTestId="itinerary-companion-qr-svg"
+            className="companion-qr-svg"
+          />
         </div>
         <div className="companion-text-content">
           <span className="companion-tag">Navegação Móvel Instantânea</span>
