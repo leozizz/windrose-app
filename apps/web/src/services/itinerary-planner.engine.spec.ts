@@ -195,4 +195,37 @@ describe('ItineraryPlannerEngine', () => {
     const museumSlot = rainyDay.slots.find((s) => s.place.id === 'poi-museum');
     expect(museumSlot).toBeDefined();
   });
+
+  describe('Estimativa de deslocamento (transitFromPrevious)', () => {
+    it('deve preencher transitFromPrevious nos slots subsequentes e manter undefined no primeiro slot do dia', () => {
+      // 3 atrações: Joaquina (manhã), Museu (tarde), Artusi (noite) no dia ensolarado
+      const itinerary = ItineraryPlannerEngine.buildSmartItinerary(
+        'Florianópolis',
+        mockLikedPois,
+        [mockDailyScores[0]] // Apenas o dia 2026-10-23
+      );
+
+      const day = itinerary.days[0];
+      expect(day.slots.length).toBe(3);
+
+      const morningSlot = day.slots[0];
+      const afternoonSlot = day.slots[1];
+      const eveningSlot = day.slots[2];
+
+      // Primeiro slot do dia não possui deslocamento anterior
+      expect(morningSlot.transitFromPrevious).toBeUndefined();
+
+      // Slot da tarde deve possuir estimativa a partir da atração da manhã
+      expect(afternoonSlot.transitFromPrevious).toBeDefined();
+      expect(afternoonSlot.transitFromPrevious?.distanceKm).toBeGreaterThan(10);
+      expect(afternoonSlot.transitFromPrevious?.walkingMinutes).toBeGreaterThan(100);
+      expect(afternoonSlot.transitFromPrevious?.drivingMinutes).toBeGreaterThan(20);
+      expect(afternoonSlot.transitFromPrevious?.formattedSummary).toContain('a pé /');
+
+      // Slot da noite deve possuir estimativa a partir da atração da tarde
+      expect(eveningSlot.transitFromPrevious).toBeDefined();
+      expect(eveningSlot.transitFromPrevious?.distanceKm).toBeLessThan(5);
+      expect(eveningSlot.transitFromPrevious?.formattedSummary).toBeDefined();
+    });
+  });
 });

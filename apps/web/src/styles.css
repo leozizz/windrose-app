@@ -1648,6 +1648,51 @@ h1, h2, h3, h4, h5, h6 {
   z-index: 1;
 }
 
+.period-slot-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 2;
+}
+
+.period-transit-estimate {
+  display: flex;
+  align-items: center;
+  margin-left: 114px;
+}
+
+.transit-estimate-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.8rem;
+  background: var(--surface-subtle);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.transit-estimate-pill:hover {
+  border-color: rgba(249, 115, 22, 0.35);
+  background: #ffffff;
+}
+
+.transit-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.transit-label {
+  line-height: 1.4;
+  word-break: break-word;
+}
+
 .period-block {
   display: flex;
   gap: 1.5rem;
@@ -2163,6 +2208,22 @@ h1, h2, h3, h4, h5, h6 {
     display: none;
   }
 
+  .period-slot-wrapper {
+    gap: 0.6rem;
+  }
+
+  .period-transit-estimate {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .transit-estimate-pill {
+    font-size: 0.72rem;
+    padding: 0.25rem 0.65rem;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
   .period-block {
     flex-direction: column;
     gap: 0.75rem;
@@ -2367,6 +2428,25 @@ h1, h2, h3, h4, h5, h6 {
 
   .day-period-timeline::before {
     display: none !important;
+  }
+
+  .period-slot-wrapper {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+    margin-bottom: 0.75rem;
+  }
+
+  .period-transit-estimate {
+    margin-left: 90px;
+    margin-bottom: 0.25rem;
+    page-break-inside: avoid;
+  }
+
+  .transit-estimate-pill {
+    border: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 8pt;
   }
 
   .period-poi-card {

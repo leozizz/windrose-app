@@ -11,6 +11,8 @@ import {
   CloudRain,
   Sparkles,
   Lightbulb,
+  Footprints,
+  Car,
 } from 'lucide-react';
 import { TripItinerary, PoiSlot } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
@@ -236,66 +238,84 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
                 )}`;
 
                 return (
-                  <div key={slot.slot} className="period-block">
-                    <div className="period-indicator">
-                      <div className="period-icon-circle">
-                        {getSlotIcon(slot.slot)}
-                      </div>
-                      <span className="period-badge">{slot.slotLabel}</span>
-                      <span className="period-time-range">
-                        {slot.startTime} - {slot.endTime}
-                      </span>
-                    </div>
-
-                    <div className="period-poi-card">
-                      {slot.place.imageUrl ? (
-                        <img
-                          src={slot.place.imageUrl}
-                          alt={slot.place.name}
-                          className="period-poi-thumb"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="period-poi-thumb-placeholder">
-                          {getSlotIcon(slot.slot)}
-                        </div>
-                      )}
-
-                      <div className="period-poi-content">
-                        <div className="period-poi-header">
-                          <h4 className="period-poi-title">{slot.place.name}</h4>
-                          <span className="category-tag">
-                            {formatCategory(slot.place.category)}
+                  <div key={slot.slot} className="period-slot-wrapper">
+                    {slot.transitFromPrevious && (
+                      <div
+                        className="period-transit-estimate"
+                        data-testid="itinerary-transit-estimate"
+                        aria-label={`Deslocamento a partir da parada anterior: ${slot.transitFromPrevious.formattedSummary}`}
+                      >
+                        <div className="transit-estimate-pill">
+                          <Footprints size={13} className="transit-icon" aria-hidden="true" />
+                          <Car size={13} className="transit-icon" aria-hidden="true" />
+                          <span className="transit-label">
+                            {slot.transitFromPrevious.formattedSummary}
                           </span>
                         </div>
+                      </div>
+                    )}
 
-                        {slot.place.address && (
-                          <p className="period-poi-address">
-                            <MapPin size={13} className="address-pin-icon" />
-                            <span>{slot.place.address}</span>
-                          </p>
-                        )}
+                    <div className="period-block">
+                      <div className="period-indicator">
+                        <div className="period-icon-circle">
+                          {getSlotIcon(slot.slot)}
+                        </div>
+                        <span className="period-badge">{slot.slotLabel}</span>
+                        <span className="period-time-range">
+                          {slot.startTime} - {slot.endTime}
+                        </span>
+                      </div>
 
-                        <p className="period-poi-desc">{slot.place.description}</p>
-
-                        {slot.weatherOptimizationNote && (
-                          <div className="period-poi-weather-note">
-                            <Sparkles size={13} className="note-icon" />
-                            <span>{slot.weatherOptimizationNote}</span>
+                      <div className="period-poi-card">
+                        {slot.place.imageUrl ? (
+                          <img
+                            src={slot.place.imageUrl}
+                            alt={slot.place.name}
+                            className="period-poi-thumb"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="period-poi-thumb-placeholder">
+                            {getSlotIcon(slot.slot)}
                           </div>
                         )}
 
-                        <div className="period-poi-actions no-print">
-                          <a
-                            href={googleMapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-open-maps"
-                            data-testid="period-poi-maps-link"
-                          >
-                            <span>Abrir no Google Maps</span>
-                            <ExternalLink size={12} className="btn-icon-end" />
-                          </a>
+                        <div className="period-poi-content">
+                          <div className="period-poi-header">
+                            <h4 className="period-poi-title">{slot.place.name}</h4>
+                            <span className="category-tag">
+                              {formatCategory(slot.place.category)}
+                            </span>
+                          </div>
+
+                          {slot.place.address && (
+                            <p className="period-poi-address">
+                              <MapPin size={13} className="address-pin-icon" />
+                              <span>{slot.place.address}</span>
+                            </p>
+                          )}
+
+                          <p className="period-poi-desc">{slot.place.description}</p>
+
+                          {slot.weatherOptimizationNote && (
+                            <div className="period-poi-weather-note">
+                              <Sparkles size={13} className="note-icon" />
+                              <span>{slot.weatherOptimizationNote}</span>
+                            </div>
+                          )}
+
+                          <div className="period-poi-actions no-print">
+                            <a
+                              href={googleMapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="btn-open-maps"
+                              data-testid="period-poi-maps-link"
+                            >
+                              <span>Abrir no Google Maps</span>
+                              <ExternalLink size={12} className="btn-icon-end" />
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
