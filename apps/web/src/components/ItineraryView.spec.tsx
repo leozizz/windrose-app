@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ItineraryView } from './ItineraryView';
-import { TripItinerary, PoiCategory, PoiEnvironment } from '@windrose/shared-types';
+import { TripItinerary, PoiCategory, PoiEnvironment, WeatherAlert } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
 
 describe('ItineraryView Component', () => {
@@ -185,6 +185,47 @@ describe('ItineraryView Component', () => {
 
       const transitBadge = screen.queryByTestId('itinerary-transit-estimate');
       expect(transitBadge).toBeNull();
+    });
+  });
+
+  describe('Banner de alerta meteorológico (WeatherAlertBanner)', () => {
+    const mockAlert: WeatherAlert = {
+      id: 'alert-1',
+      type: 'TEMPERATURE_DROP',
+      severity: 'WARNING',
+      title: 'Queda brusca de temperatura',
+      description: 'Queda de 9°C prevista entre 2026-10-23 e 2026-10-24',
+      date: '2026-10-24',
+      previousDate: '2026-10-23',
+      metricDelta: {
+        from: 28,
+        to: 19,
+        unit: '°C',
+      },
+      recommendation: 'Leve agasalho e planeje atividades em locais cobertos.',
+    };
+
+    it('deve renderizar o banner com data-testid="weather-alert-banner" e role="region" quando itinerary.alerts contiver alertas', () => {
+      const itineraryWithAlerts: TripItinerary = {
+        ...mockItinerary,
+        alerts: [mockAlert],
+      };
+
+      render(<ItineraryView itinerary={itineraryWithAlerts} onBackToSwipe={vi.fn()} />);
+
+      const banner = screen.getByTestId('weather-alert-banner');
+      expect(banner).toBeDefined();
+      expect(banner.getAttribute('role')).toBe('region');
+      expect(banner.getAttribute('aria-label')).toBe('Avisos meteorológicos');
+      expect(screen.getByText('Queda brusca de temperatura')).toBeDefined();
+      expect(screen.getByText(/Queda de 9°C prevista/i)).toBeDefined();
+      expect(screen.getByText(/Leve agasalho e planeje atividades em locais cobertos/i)).toBeDefined();
+    });
+
+    it('não deve renderizar o banner quando itinerary.alerts for indefinido ou vazio', () => {
+      render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+      expect(screen.queryByTestId('weather-alert-banner')).toBeNull();
     });
   });
 });

@@ -1,4 +1,5 @@
 import { ActivityType } from './activity.enum';
+import { WeatherAlert } from './weather.interface';
 
 /**
  * Score breakdown for a specific date and activity.
@@ -8,6 +9,7 @@ export interface DailyScore {
   score: number; // 0 - 100
   recommendationLevel: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
   reasons: string[];
+  alerts?: WeatherAlert[];
 }
 
 /**
@@ -21,4 +23,5 @@ export interface ActivityRankingResult {
   overallScore: number; // 0 - 100
   recommendationLevel: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR';
   dailyScores: DailyScore[];
+  alerts?: WeatherAlert[];
 }

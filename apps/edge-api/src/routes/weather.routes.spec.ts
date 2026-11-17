@@ -121,6 +121,115 @@ describe('Weather Routes Integration (Hono Edge API)', () => {
       const json = await res.json();
       expect(json.error).toContain('not found');
     });
+
+    it('deve retornar alertas de mudança brusca de tempo quando houver frente fria ou tempestade', async () => {
+      vi.spyOn(GeocodingClient, 'searchCity').mockResolvedValueOnce({
+        name: 'Curitiba',
+        latitude: -25.42,
+        longitude: -49.27,
+        country: 'Brazil',
+      });
+
+      const mockWeather: LocationWeatherInfo = {
+        latitude: -25.42,
+        longitude: -49.27,
+        cityName: 'Curitiba',
+        timezone: 'America/Sao_Paulo',
+        daily: [
+          {
+            date: '2026-11-18',
+            temperatureMax: 28,
+            temperatureMin: 18,
+            apparentTemperatureMax: 28,
+            apparentTemperatureMin: 18,
+            precipitationSum: 0,
+            weatherCode: 0,
+            precipitationProbabilityMax: 10,
+          },
+          {
+            date: '2026-11-19',
+            temperatureMax: 19, // Queda de 9°C
+            temperatureMin: 13,
+            apparentTemperatureMax: 18,
+            apparentTemperatureMin: 13,
+            precipitationSum: 30, // Tempestade / chuva severa >= 25mm
+            weatherCode: 95,
+            precipitationProbabilityMax: 90, // Salto 10% -> 90%
+          },
+        ],
+      };
+
+      vi.spyOn(OpenMeteoClient, 'getWeatherInfo').mockResolvedValueOnce(mockWeather);
+
+      const res = await app.request(
+        '/api/weather/rank?city=Curitiba&activity=OUTDOOR_SIGHTSEEING'
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.alerts).toBeDefined();
+      expect(json.alerts.length).toBeGreaterThanOrEqual(2);
+      expect(json.alerts.some((a: { type: string }) => a.type === 'TEMPERATURE_DROP')).toBe(true);
+      expect(json.alerts.some((a: { type: string }) => a.type === 'STORM')).toBe(true);
+      expect(json.dailyScores[1].alerts).toBeDefined();
+      expect(json.dailyScores[1].alerts.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe('GET /api/weather/forecast', () => {
+    it('deve retornar HTTP 400 se lat/lon forem inválidos ou omitidos', async () => {
+      const res = await app.request('/api/weather/forecast?lat=invalid');
+      expect(res.status).toBe(400);
+    });
+
+    it('deve retornar HTTP 200 com previsão meteorológica e alertas climáticos para coordenadas válidas', async () => {
+      const mockWeather: LocationWeatherInfo = {
+        latitude: -25.42,
+        longitude: -49.27,
+        cityName: 'Curitiba',
+        timezone: 'America/Sao_Paulo',
+        daily: [
+          {
+            date: '2026-11-18',
+            temperatureMax: 28,
+            temperatureMin: 18,
+            apparentTemperatureMax: 28,
+            apparentTemperatureMin: 18,
+            precipitationSum: 0,
+            weatherCode: 0,
+          },
+          {
+            date: '2026-11-19',
+            temperatureMax: 19,
+            temperatureMin: 13,
+            apparentTemperatureMax: 18,
+            apparentTemperatureMin: 13,
+            precipitationSum: 0,
+            weatherCode: 3,
+          },
+        ],
+        alerts: [
+          {
+            id: 'alert-temp-drop-2026-11-19',
+            type: 'TEMPERATURE_DROP',
+            severity: 'WARNING',
+            title: 'Queda Brusca de Temperatura (Frente Fria)',
+            description: 'Queda de 9°C prevista.',
+            date: '2026-11-19',
+          },
+        ],
+      };
+
+      vi.spyOn(OpenMeteoClient, 'getWeatherInfo').mockResolvedValueOnce(mockWeather);
+
+      const res = await app.request('/api/weather/forecast?lat=-25.42&lon=-49.27&cityName=Curitiba');
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.cityName).toBe('Curitiba');
+      expect(json.alerts).toBeDefined();
+      expect(json.alerts).toHaveLength(1);
+      expect(json.alerts[0].type).toBe('TEMPERATURE_DROP');
+    });
   });
 
   describe('GET /api/weather/search', () => {

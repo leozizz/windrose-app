@@ -6,6 +6,7 @@ import {
   ItinerarySlot,
   PoiEnvironment,
   PoiCategory,
+  WeatherAlert,
 } from '@windrose/shared-types';
 import { TravelDistanceCalculator } from './travel-distance.calculator';
 
@@ -14,16 +15,24 @@ export class ItineraryPlannerEngine {
    * Builds an optimized travel itinerary combining liked places with weather forecasts.
    * Strategically reserves indoor attractions for adverse/rainy days and outdoor attractions for sunny days.
    */
-  static buildSmartItinerary(
+  static buildSmartItinerary = (
     city: string,
     likedPois: PointOfInterest[],
-    dailyScores: DailyScore[]
-  ): TripItinerary {
+    dailyScores: DailyScore[],
+    alerts?: WeatherAlert[]
+  ): TripItinerary => {
+    const resolvedAlerts: WeatherAlert[] = alerts
+      ? [...alerts]
+      : (dailyScores || [])
+          .flatMap((d) => d.alerts || [])
+          .filter((alert, index, self) => self.findIndex((a) => a.id === alert.id) === index);
+
     if (!likedPois || likedPois.length === 0 || !dailyScores || dailyScores.length === 0) {
       return {
         city,
         days: [],
         totalPlacesScheduled: 0,
+        ...(resolvedAlerts.length > 0 ? { alerts: resolvedAlerts } : {}),
       };
     }
 
@@ -237,10 +246,11 @@ export class ItineraryPlannerEngine {
       city,
       days: activeDays.length > 0 ? activeDays : days,
       totalPlacesScheduled: scheduledPoiIds.size,
+      ...(resolvedAlerts.length > 0 ? { alerts: resolvedAlerts } : {}),
     };
-  }
+  };
 
-  private static getWeekday(dateStr: string): string {
+  private static getWeekday = (dateStr: string): string => {
     try {
       const date = new Date(dateStr + 'T00:00:00');
       const name = date.toLocaleDateString('pt-BR', { weekday: 'long' });
@@ -248,5 +258,5 @@ export class ItineraryPlannerEngine {
     } catch {
       return dateStr;
     }
-  }
+  };
 }

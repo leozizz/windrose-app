@@ -23,6 +23,7 @@ import { useTripSession } from '../hooks/useTripSession';
 import { SwipeDeck } from '../components/SwipeDeck';
 import { MatchesList } from '../components/MatchesList';
 import { ItineraryView } from '../components/ItineraryView';
+import { WeatherAlertBanner } from '../components/WeatherAlertBanner';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { A11yAnnouncer } from '../components/A11yAnnouncer';
 import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
@@ -156,7 +157,8 @@ export const App: React.FC = () => {
     return ItineraryPlannerEngine.buildSmartItinerary(
       activeCity,
       likedPlacesList,
-      dailyScoresList
+      dailyScoresList,
+      ranking.alerts
     );
   }, [ranking, likedPlacesList, dailyScoresList, activeCity]);
 
@@ -460,24 +462,64 @@ export const App: React.FC = () => {
 
             {/* Tab 4: 7-Day Weather Forecast */}
             {activeTab === 'weather' && ranking && (
-              <div className="matches-grid">
-                {dailyScoresList.map((day) => (
-                  <div key={day.date} className="match-card weather-forecast-card">
-                    <span className={`suitability-badge ${day.recommendationLevel} weather-forecast-badge`}>
-                      {formatRecommendation(day.recommendationLevel)} • {day.score}/100
-                    </span>
-                    <h3 className="weather-forecast-date">
-                      {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' })}
-                    </h3>
-                    {day.reasons && day.reasons.length > 0 && (
-                      <ul className="weather-forecast-reasons">
-                        {day.reasons.map((r, i) => (
-                          <li key={i}>{r}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
+              <div className="weather-tab-section">
+                {ranking.alerts && ranking.alerts.length > 0 && (
+                  <WeatherAlertBanner
+                    alerts={ranking.alerts}
+                    className="weather-forecast-alert-banner"
+                  />
+                )}
+                <div className="matches-grid">
+                  {dailyScoresList.map((day) => {
+                    const dayAlerts =
+                      day.alerts || ranking.alerts?.filter((a) => a.date === day.date) || [];
+                    return (
+                      <div key={day.date} className="match-card weather-forecast-card">
+                        <div className="weather-forecast-header-row">
+                          <span
+                            className={`suitability-badge ${day.recommendationLevel} weather-forecast-badge`}
+                          >
+                            {formatRecommendation(day.recommendationLevel)} • {day.score}/100
+                          </span>
+                          {dayAlerts.length > 0 && (
+                            <span
+                              className="daily-weather-alert-badge"
+                              data-testid="daily-weather-alert-badge"
+                              role="status"
+                              aria-label={`Aviso meteorológico para ${day.date}: ${dayAlerts.map((a) => a.title).join(', ')}`}
+                            >
+                              <AlertTriangle size={13} aria-hidden="true" />
+                              <span>{dayAlerts[0].title}</span>
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="weather-forecast-date">
+                          {new Date(day.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'short',
+                          })}
+                        </h3>
+                        {dayAlerts.length > 0 && (
+                          <div className="daily-weather-alert-box">
+                            {dayAlerts.map((a) => (
+                              <p key={a.id} className="daily-weather-alert-text">
+                                <strong>{a.title}:</strong> {a.description}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                        {day.reasons && day.reasons.length > 0 && (
+                          <ul className="weather-forecast-reasons">
+                            {day.reasons.map((r, i) => (
+                              <li key={i}>{r}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </>

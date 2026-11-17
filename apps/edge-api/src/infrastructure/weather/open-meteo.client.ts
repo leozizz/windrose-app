@@ -1,4 +1,5 @@
 import { LocationWeatherInfo, DailyWeatherData } from '@windrose/shared-types';
+import { WeatherAlertEvaluator } from '../../core/evaluators/weather-alert.evaluator';
 
 interface ForecastApiResponse {
   timezone?: string;
@@ -9,6 +10,7 @@ interface ForecastApiResponse {
     apparent_temperature_max: number[];
     apparent_temperature_min: number[];
     precipitation_sum: number[];
+    precipitation_probability_max?: number[];
     weathercode: number[];
     windspeed_10m_max: number[];
   };
@@ -66,11 +68,14 @@ export class OpenMeteoClient {
       apparentTemperatureMax: forecastData.daily.apparent_temperature_max[index] ?? 0,
       apparentTemperatureMin: forecastData.daily.apparent_temperature_min[index] ?? 0,
       precipitationSum: forecastData.daily.precipitation_sum[index] ?? 0,
+      precipitationProbabilityMax: forecastData.daily.precipitation_probability_max?.[index],
       weatherCode: forecastData.daily.weathercode[index] ?? 0,
       maxWindSpeed: forecastData.daily.windspeed_10m_max[index] ?? 0,
       waveHeightMax: marineData?.daily?.wave_height_max?.[index] ?? 0,
       wavePeriodMax: marineData?.daily?.wave_period_max?.[index] ?? 0,
     }));
+
+    const alerts = WeatherAlertEvaluator.evaluateAlerts(daily);
 
     const result: LocationWeatherInfo = {
       latitude,
@@ -78,6 +83,7 @@ export class OpenMeteoClient {
       cityName,
       timezone: forecastData.timezone || 'UTC',
       daily,
+      ...(alerts.length > 0 ? { alerts } : {}),
     };
 
     this.cache.set(cacheKey, {
@@ -126,7 +132,7 @@ export class OpenMeteoClient {
     url.searchParams.set('longitude', longitude.toString());
     url.searchParams.set(
       'daily',
-      'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,weathercode,windspeed_10m_max'
+      'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,weathercode,windspeed_10m_max'
     );
     url.searchParams.set('timezone', 'auto');
     url.searchParams.set('forecast_days', '7');

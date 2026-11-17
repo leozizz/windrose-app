@@ -1,4 +1,5 @@
 import { PointOfInterest } from './places.interface';
+import { WeatherAlert } from './weather.interface';
 
 /**
  * Estimativa de tempo e distância de deslocamento entre duas atrações consecutivas.
@@ -45,5 +46,6 @@ export interface TripItinerary {
   city: string;
   days: ItineraryDay[];
   totalPlacesScheduled: number;
+  alerts?: WeatherAlert[];
 }
 
