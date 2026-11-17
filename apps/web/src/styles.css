@@ -1293,6 +1293,27 @@ h1, h2, h3, h4, h5, h6 {
   background: rgba(255, 255, 255, 0.2);
 }
 
+.itinerary-actions-row .btn-share {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  transition: all var(--transition-fast);
+}
+
+.itinerary-actions-row .btn-share:hover {
+  background: rgba(255, 255, 255, 0.26);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+
+.itinerary-actions-row .btn-share.is-copied {
+  background: #059669;
+  border-color: #047857;
+  color: #ffffff;
+}
+
 /* QR Code Companion Card */
 .itinerary-companion-card {
   background: #ffffff;
@@ -1376,6 +1397,87 @@ h1, h2, h3, h4, h5, h6 {
 
 .companion-link:hover {
   text-decoration: underline;
+}
+
+.companion-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.companion-link-share {
+  color: var(--primary);
+}
+
+.companion-link-maps {
+  color: var(--text-muted);
+}
+
+.companion-link-maps:hover {
+  color: var(--text-main);
+}
+
+/* Shared Trip Editorial Welcome Banner */
+.shared-trip-banner {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-lg);
+  padding: 0.85rem 1.25rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #92400e;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08);
+  animation: fadeIn 0.3s ease-out;
+}
+
+.shared-trip-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.shared-banner-icon {
+  flex-shrink: 0;
+  color: #d97706;
+}
+
+.shared-trip-banner-dismiss {
+  background: transparent;
+  border: none;
+  color: #92400e;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.shared-trip-banner-dismiss:hover {
+  background: rgba(146, 64, 14, 0.12);
+  color: #78350f;
+}
+
+.shared-trip-banner-dismiss:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.sr-only-clipboard {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Map Section in Itinerary & Matches */
@@ -2160,7 +2262,8 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .btn-print,
-  .btn-calendar {
+  .btn-calendar,
+  .btn-share {
     width: 100%;
     justify-content: center;
     min-height: 48px;
