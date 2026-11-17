@@ -7,6 +7,7 @@ import {
 import { OutdoorSightseeingEvaluator } from './outdoor-sightseeing.evaluator';
 import { SurfingEvaluator } from './surfing.evaluator';
 import { BeachEvaluator } from './beach.evaluator';
+import { WeatherAlertEvaluator } from './weather-alert.evaluator';
 
 /**
  * Service calculating overall activity suitability scores and recommendation levels.
@@ -23,17 +24,31 @@ export class ScoringService {
     weatherInfo: LocationWeatherInfo,
     activity: ActivityType
   ): ActivityRankingResult => {
+    const alerts = weatherInfo.alerts ?? WeatherAlertEvaluator.evaluateAlerts(weatherInfo.daily);
+
     const dailyScores: DailyScore[] = weatherInfo.daily.map((day) => {
+      let scoreObj: DailyScore;
       switch (activity) {
         case ActivityType.OUTDOOR_SIGHTSEEING:
-          return OutdoorSightseeingEvaluator.evaluateDay(day);
+          scoreObj = OutdoorSightseeingEvaluator.evaluateDay(day);
+          break;
         case ActivityType.SURFING:
-          return SurfingEvaluator.evaluateDay(day);
+          scoreObj = SurfingEvaluator.evaluateDay(day);
+          break;
         case ActivityType.BEACH_DAY:
-          return BeachEvaluator.evaluateDay(day);
+          scoreObj = BeachEvaluator.evaluateDay(day);
+          break;
         default:
-          return OutdoorSightseeingEvaluator.evaluateDay(day);
+          scoreObj = OutdoorSightseeingEvaluator.evaluateDay(day);
+          break;
       }
+
+      const dayAlerts = alerts.filter((a) => a.date === day.date);
+      if (dayAlerts.length > 0) {
+        scoreObj.alerts = dayAlerts;
+      }
+
+      return scoreObj;
     });
 
     const totalScoreSum = dailyScores.reduce((acc, curr) => acc + curr.score, 0);
@@ -53,6 +68,7 @@ export class ScoringService {
       overallScore,
       recommendationLevel,
       dailyScores,
+      ...(alerts.length > 0 ? { alerts } : {}),
     };
   };
 }
