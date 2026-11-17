@@ -1,7 +1,7 @@
 # 🚀 Instruções do Agente: Windrose | DevOps
 
 > **Identificador:** `devops`  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `low` a `medium`  
 > **Escopo de Atuação:** Cloudflare Pages & Pages Functions, Wrangler (`apps/edge-api`), CI/CD (GitHub Actions), Healthchecks e Fechamento/Despacho do Backlog (`pnpm sync:close`)  
 

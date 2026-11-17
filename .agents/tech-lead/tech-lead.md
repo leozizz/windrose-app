@@ -1,7 +1,7 @@
 # 👑 Instruções do Agente: Windrose | Tech Lead
 
 > **Identificador:** `tech-lead`  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `medium`  
 > **Escopo de Atuação:** Arquitetura de Software, Segurança Edge, Planos TDD (`plan.{ID}.md`), Code Review e Merge na `main`  
 

@@ -10,7 +10,7 @@ Este documento descreve a arquitetura multi-agente do **Windrose** dentro da emp
 | **Projeto** | `Windrose` (`7e340278-e6dd-4fcd-b1e5-578d569e1d12`) |
 | **Repositório GitHub** | `leozizz/windrose-app` |
 | **Workspace Local** | `C:\Code\Leozizz\windrose-app` |
-| **Modelo Padrão** | `gemini-3.8-flash-medium` |
+| **Modelo Padrão** | `gemini-4-hydrogen-medium` |
 | **Adapter** | `antigravity_local` (`instructionsBundleMode: external`) |
 
 ## Stack do Projeto

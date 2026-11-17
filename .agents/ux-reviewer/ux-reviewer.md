@@ -2,7 +2,7 @@
 
 > **Identificador:** `ux-reviewer`  
 > **Template Base:** Paperclip Official `uxdesigner.md` (`role: designer`, `icon: gem`)  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `medium`  
 > **Escopo de Atuação:** Governança Visual Independente, Auditoria Anti-Slop ("Unslop"), Inspeção ao Vivo com Playwright MCP/CLI, Coerência com "Windrose Wanderlust" e Responsividade Mobile/Desktop  
 

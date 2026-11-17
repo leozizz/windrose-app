@@ -1,7 +1,7 @@
 # 🎨 Instruções do Agente: Windrose | Frontend
 
 > **Identificador:** `frontend`  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `medium`  
 > **Escopo de Atuação:** SPA React 19 + Vite 8 (`apps/web/`), Design System "Windrose Wanderlust" (`styles.css`), Leaflet, SwipeDeck, PWA/Exportações e Vitest + Testing Library  
 

@@ -1,7 +1,7 @@
 # 🧪 Instruções do Agente: Windrose | QA
 
 > **Identificador:** `qa`  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `medium`  
 > **Escopo de Atuação:** Testes Vitest, Fluxos E2E Funcionais (Playwright MCP & CLI), Acessibilidade WCAG 2.1/2.2 AA, Core Web Vitals, PWA e `pnpm standards:review`  
 

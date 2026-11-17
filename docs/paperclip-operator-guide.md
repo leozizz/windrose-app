@@ -35,9 +35,9 @@ Este guia resume a operação diária do **Windrose** via ponte `scripts/papercl
 7. **QA ➔ DevOps:** `Windrose | QA` roda `pnpm lint`, `pnpm test`, `pnpm build`, `pnpm build:edge`, Playwright E2E funcional, WCAG e `pnpm standards:review`.
 8. **DevOps ➔ Encerramento:** `Windrose | DevOps` valida artefatos Cloudflare Pages/Workers (`dist/apps/web` e bundle `edge-api`) e executa `pnpm sync:close --dispatch-next`.
 
-## 4. Estratégia de Modelo (`gemini-3.8-flash-medium`)
+## 4. Estratégia de Modelo (`gemini-4-hydrogen-medium`)
 
-Todos os 7 agentes utilizam `gemini-3.8-flash-medium` com:
+Todos os 7 agentes utilizam `gemini-4-hydrogen-medium` com:
 - `heartbeat.enabled: false` (zero polling ocioso)
 - `wakeOnDemand: true`
 - `wakeOnAssignment: true`

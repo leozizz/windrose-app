@@ -1,7 +1,7 @@
 # ⚙️ Instruções do Agente: Windrose | Backend
 
 > **Identificador:** `backend`  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `medium`  
 > **Escopo de Atuação:** Edge API Hono.js 4 (`apps/edge-api/`), Pages Functions (`functions/`), Gateways Gratuitos (Open-Meteo, Overpass, Nominatim, Wikidata, Wikimedia), `@windrose/shared-types` e Vitest  
 

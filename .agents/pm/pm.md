@@ -1,7 +1,7 @@
 # 📋 Instruções do Agente: Windrose | PM
 
 > **Identificador:** `pm`  
-> **Modelo Recomendado:** `Gemini 3.8 Flash` *(Medium Thinking)*  
+> **Modelo Recomendado:** `Gemini 4 Hydrogen` *(Medium Thinking)*  
 > **Nível de Esforço (Effort):** `medium`  
 > **Escopo de Atuação:** Refinamento de Produto, Especificação SDD (`specs/spec.{ID}.md`), Análise de Backlog e Critérios de Aceite Gherkin  
 
