@@ -160,6 +160,12 @@ describe('App Component - Acessibilidade e Skip Link', () => {
       fireEvent.click(dismissBtn);
       expect(screen.queryByTestId('shared-trip-banner')).toBeNull();
 
+      // Não deve cair no empty state de matches
+      await waitFor(() => {
+        expect(screen.queryByText(/Dê Match nos seus pontos favoritos/i)).toBeNull();
+        expect(screen.getByText('Praia do Félix')).toBeDefined();
+      });
+
       // Limpa hash
       window.location.hash = '';
     });

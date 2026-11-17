@@ -98,4 +98,57 @@ describe('useTripSession hook', () => {
     const stored = JSON.parse(storedRaw as string);
     expect(Object.keys(stored.swipes)).toHaveLength(2);
   });
+
+  it('não deve sobrescrever localStorage com estado vazio quando a cidade mudar (prevenção de race condition)', () => {
+    // Prepara dados pré-existentes no localStorage para Ubatuba
+    const ubatubaKey = 'windrose_trip_v2_ubatuba';
+    localStorage.setItem(
+      ubatubaKey,
+      JSON.stringify({
+        city: 'Ubatuba',
+        swipes: {
+          'poi-1': { poi: mockPoi, action: 'liked', timestamp: 123456 },
+        },
+        history: ['poi-1'],
+      })
+    );
+
+    // Inicia o hook com cidade vazia (como no App.tsx ao montar)
+    const { result, rerender } = renderHook(({ city }) => useTripSession(city), {
+      initialProps: { city: '' },
+    });
+
+    expect(result.current.city).toBe('');
+    expect(result.current.totalLikes).toBe(0);
+
+    // Alterna a cidade para Ubatuba
+    rerender({ city: 'Ubatuba' });
+
+    // O hook NÃO deve ter apagado os dados de Ubatuba no localStorage e deve ter carregado o poi-1
+    expect(result.current.city).toBe('Ubatuba');
+    expect(result.current.totalLikes).toBe(1);
+    expect(result.current.likedPois).toHaveLength(1);
+    expect(result.current.likedPois[0].id).toBe('poi-1');
+
+    const storedAfter = JSON.parse(localStorage.getItem(ubatubaKey) || '{}');
+    expect(storedAfter.swipes?.['poi-1']).toBeDefined();
+  });
+
+  it('deve permitir hidratar locais especificando overrideCity mesmo com hook inicializado com cidade vazia', () => {
+    const { result } = renderHook(() => useTripSession(''));
+
+    act(() => {
+      result.current.hydrateLikedPlaces([mockPoi], 'Ubatuba');
+    });
+
+    expect(result.current.city).toBe('Ubatuba');
+    expect(result.current.totalLikes).toBe(1);
+    expect(result.current.likedPois).toHaveLength(1);
+
+    const storedRaw = localStorage.getItem('windrose_trip_v2_ubatuba');
+    expect(storedRaw).not.toBeNull();
+    const stored = JSON.parse(storedRaw as string);
+    expect(stored.city).toBe('Ubatuba');
+    expect(stored.swipes['poi-1']).toBeDefined();
+  });
 });

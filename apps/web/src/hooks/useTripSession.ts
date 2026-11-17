@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { PointOfInterest } from '@windrose/shared-types';
 
 export interface SwipeRecord {
@@ -16,16 +16,25 @@ export interface TripSessionState {
 const STORAGE_PREFIX = 'windrose_trip_v2_';
 
 export const useTripSession = (city: string) => {
-  const storageKey = `${STORAGE_PREFIX}${city.trim().toLowerCase()}`;
+  const normalizedCity = city.trim().toLowerCase();
+  const storageKey = normalizedCity ? `${STORAGE_PREFIX}${normalizedCity}` : '';
+
+  const prevPropCityRef = useRef<string>(city);
+  const cityRef = useRef<string>(city);
+  useEffect(() => {
+    cityRef.current = city;
+  }, [city]);
 
   const [state, setState] = useState<TripSessionState>(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        return JSON.parse(stored);
+    if (storageKey) {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          return JSON.parse(stored);
+        }
+      } catch {
+        // Ignore storage read errors
       }
-    } catch {
-      // Ignore storage read errors
     }
     return {
       city,
@@ -34,36 +43,41 @@ export const useTripSession = (city: string) => {
     };
   });
 
-  // Sync to local storage on state update
+  // Adjust state synchronously during render if `city` prop changes, preventing race conditions
+  if (prevPropCityRef.current !== city) {
+    prevPropCityRef.current = city;
+    if (state.city.trim().toLowerCase() !== normalizedCity) {
+      let nextState: TripSessionState = {
+        city,
+        swipes: {},
+        history: [],
+      };
+      if (storageKey) {
+        try {
+          const stored = localStorage.getItem(storageKey);
+          if (stored) {
+            nextState = JSON.parse(stored);
+          }
+        } catch {
+          // Ignore storage read errors
+        }
+      }
+      setState(nextState);
+    }
+  }
+
+  // Sync to local storage only when state matches the active city and city is non-empty
   useEffect(() => {
+    if (!city.trim() || !storageKey) return;
+    // CRITICAL: Prevent saving state to storage if it belongs to a different city!
+    if (state.city.trim().toLowerCase() !== normalizedCity) return;
+
     try {
       localStorage.setItem(storageKey, JSON.stringify(state));
     } catch {
       // Ignore storage write errors
     }
-  }, [state, storageKey]);
-
-  // When city changes, reload session for that city
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        setState(JSON.parse(stored));
-      } else {
-        setState({
-          city,
-          swipes: {},
-          history: [],
-        });
-      }
-    } catch {
-      setState({
-        city,
-        swipes: {},
-        history: [],
-      });
-    }
-  }, [city, storageKey]);
+  }, [state, storageKey, city, normalizedCity]);
 
   const swipe = useCallback((poi: PointOfInterest, action: 'liked' | 'rejected') => {
     setState((prev) => {
@@ -103,20 +117,30 @@ export const useTripSession = (city: string) => {
   }, []);
 
   const clearSession = useCallback(() => {
+    const currentCity = cityRef.current;
+    const currentKey = currentCity.trim()
+      ? `${STORAGE_PREFIX}${currentCity.trim().toLowerCase()}`
+      : '';
+
     setState({
-      city,
+      city: currentCity,
       swipes: {},
       history: [],
     });
-    try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      // ignore
+    if (currentKey) {
+      try {
+        localStorage.removeItem(currentKey);
+      } catch {
+        // ignore
+      }
     }
-  }, [city, storageKey]);
+  }, []);
 
   const hydrateLikedPlaces = useCallback(
-    (pois: PointOfInterest[]) => {
+    (pois: PointOfInterest[], overrideCity?: string) => {
+      const targetCity = (overrideCity !== undefined ? overrideCity : cityRef.current).trim();
+      const targetNormalized = targetCity.toLowerCase();
+      const targetKey = targetNormalized ? `${STORAGE_PREFIX}${targetNormalized}` : '';
       const timestamp = Date.now();
       const newSwipes: Record<string, SwipeRecord> = {};
       const newHistory: string[] = [];
@@ -131,20 +155,22 @@ export const useTripSession = (city: string) => {
       }
 
       const newState: TripSessionState = {
-        city,
+        city: targetCity,
         swipes: newSwipes,
         history: newHistory,
       };
 
       setState(newState);
 
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(newState));
-      } catch {
-        // ignore storage errors
+      if (targetKey) {
+        try {
+          localStorage.setItem(targetKey, JSON.stringify(newState));
+        } catch {
+          // ignore storage errors
+        }
       }
     },
-    [city, storageKey]
+    []
   );
 
   const likedPois = useMemo(() => {
@@ -161,7 +187,7 @@ export const useTripSession = (city: string) => {
   );
 
   return {
-    city,
+    city: state.city || city,
     swipes: state.swipes,
     likedPois,
     likedPlaces: likedPois, // Alias for backward compatibility

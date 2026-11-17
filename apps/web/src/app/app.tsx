@@ -162,27 +162,8 @@ export const App: React.FC = () => {
         address: item.address,
       }));
 
-      // Persiste imediatamente no localStorage para garantir leitura na montagem do hook
-      try {
-        const storageKey = `windrose_trip_v2_${payload.c.trim().toLowerCase()}`;
-        const swipes: Record<string, { poi: PointOfInterest; action: 'liked'; timestamp: number }> = {};
-        const history: string[] = [];
-        const now = Date.now();
-        for (const poi of restoredPois) {
-          swipes[poi.id] = { poi, action: 'liked', timestamp: now };
-          history.push(poi.id);
-        }
-        localStorage.setItem(
-          storageKey,
-          JSON.stringify({
-            city: payload.c,
-            swipes,
-            history,
-          })
-        );
-      } catch {
-        // Ignora erros de escrita no storage
-      }
+      // Hidratação explícita da sessão em memória e persistência via hook useTripSession
+      session.hydrateLikedPlaces(restoredPois, payload.c);
 
       const targetActivity = payload.a || ActivityType.OUTDOOR_SIGHTSEEING;
       setActiveCity(payload.c);
@@ -206,7 +187,7 @@ export const App: React.FC = () => {
         // Ignora erro em ambientes restritos
       }
     }
-  }, [fetchData]);
+  }, [fetchData, session.hydrateLikedPlaces]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -536,7 +517,17 @@ export const App: React.FC = () => {
             {/* Tab 3: Itinerary View */}
             {activeTab === 'itinerary' && (
               <div>
-                {generatedItinerary ? (
+                {loadingWeather ? (
+                  <div className="empty-deck-card" data-testid="itinerary-loading">
+                    <div className="empty-deck-icon">
+                      <Loader2 size={40} className="spin-animate" />
+                    </div>
+                    <h3>Construindo seu roteiro inteligente...</h3>
+                    <p>
+                      Analisando a previsão do tempo para {activeCity || 'o seu destino'} e organizando as melhores atrações.
+                    </p>
+                  </div>
+                ) : generatedItinerary ? (
                   <ItineraryView
                     itinerary={generatedItinerary}
                     onBackToSwipe={() => handleTabChange('swipe')}
