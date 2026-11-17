@@ -15,7 +15,7 @@ export interface TripSessionState {
 
 const STORAGE_PREFIX = 'windrose_trip_v2_';
 
-export function useTripSession(city: string) {
+export const useTripSession = (city: string) => {
   const storageKey = `${STORAGE_PREFIX}${city.trim().toLowerCase()}`;
 
   const [state, setState] = useState<TripSessionState>(() => {
@@ -115,6 +115,38 @@ export function useTripSession(city: string) {
     }
   }, [city, storageKey]);
 
+  const hydrateLikedPlaces = useCallback(
+    (pois: PointOfInterest[]) => {
+      const timestamp = Date.now();
+      const newSwipes: Record<string, SwipeRecord> = {};
+      const newHistory: string[] = [];
+
+      for (const poi of pois) {
+        newSwipes[poi.id] = {
+          poi,
+          action: 'liked',
+          timestamp,
+        };
+        newHistory.push(poi.id);
+      }
+
+      const newState: TripSessionState = {
+        city,
+        swipes: newSwipes,
+        history: newHistory,
+      };
+
+      setState(newState);
+
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(newState));
+      } catch {
+        // ignore storage errors
+      }
+    },
+    [city, storageKey]
+  );
+
   const likedPois = useMemo(() => {
     return Object.values(state.swipes || {})
       .filter((record) => record.action === 'liked')
@@ -143,5 +175,6 @@ export function useTripSession(city: string) {
     clearSession,
     clearCitySession: clearSession,
     isSwiped,
+    hydrateLikedPlaces,
   };
-}
+};

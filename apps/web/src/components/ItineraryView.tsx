@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Sunrise,
   Sun,
@@ -13,9 +13,17 @@ import {
   Lightbulb,
   Footprints,
   Car,
+  Share2,
+  Check,
 } from 'lucide-react';
-import { TripItinerary, PoiSlot } from '@windrose/shared-types';
+import {
+  TripItinerary,
+  PoiSlot,
+  ActivityType,
+  PointOfInterest,
+} from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
+import { buildShareableTripUrl } from '../services/trip-serializer.service';
 import { InteractiveMap } from './InteractiveMap';
 import { QrCodeSvg } from './QrCodeSvg';
 import { WeatherAlertBanner } from './WeatherAlertBanner';
@@ -24,12 +32,18 @@ import { formatCategory, formatRecommendation } from '../utils/labels';
 interface ItineraryViewProps {
   itinerary: TripItinerary;
   onBackToSwipe: () => void;
+  activity?: ActivityType;
+  likedPlaces?: PointOfInterest[];
 }
 
 export const ItineraryView: React.FC<ItineraryViewProps> = ({
   itinerary,
   onBackToSwipe,
+  activity,
+  likedPlaces,
 }) => {
+  const [copied, setCopied] = useState<boolean>(false);
+
   const handlePrintPdf = () => {
     window.print();
   };
@@ -38,8 +52,47 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     CalendarExporter.downloadIcsFile(itinerary);
   };
 
-  // Collect all unique scheduled places for map display
+  // Collect all unique scheduled places for map display and fallback sharing
   const allScheduledPlaces = itinerary.days.flatMap((d) => d.slots.map((s) => s.place));
+  const placesForShare = likedPlaces && likedPlaces.length > 0 ? likedPlaces : allScheduledPlaces;
+
+  const shareTripUrl = buildShareableTripUrl(
+    itinerary.city,
+    activity ?? ActivityType.OUTDOOR_SIGHTSEEING,
+    placesForShare
+  );
+
+  const handleShareTrip = async () => {
+    let success = false;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareTripUrl);
+        success = true;
+      }
+    } catch {
+      // Falha permissiva: prossegue para fallback
+    }
+
+    if (!success) {
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = shareTripUrl;
+        textArea.setAttribute('readonly', '');
+        textArea.className = 'sr-only-clipboard';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      } catch {
+        // Fallback defensivo silencioso
+      }
+    }
+
+    setCopied(true);
+    setTimeout(() => {
+      setCopied(false);
+    }, 2500);
+  };
 
   if (!itinerary.days || itinerary.days.length === 0) {
     return (
@@ -125,6 +178,26 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           <div className="itinerary-actions-row no-print">
             <button
               type="button"
+              className={`action-button-secondary btn-share ${copied ? 'is-copied' : ''}`}
+              onClick={handleShareTrip}
+              title="Copiar link estático para compartilhar este roteiro com amigos"
+              data-testid={copied ? 'itinerary-share-btn-copied' : 'itinerary-share-btn'}
+              aria-live="polite"
+            >
+              {copied ? (
+                <>
+                  <Check size={17} className="btn-icon-start" />
+                  <span>Link Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 size={17} className="btn-icon-start" />
+                  <span>Compartilhar Roteiro</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
               className="action-button-primary btn-print"
               onClick={handlePrintPdf}
               title="Salvar como PDF ou Imprimir este roteiro"
@@ -156,7 +229,7 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
       <section className="itinerary-companion-card">
         <div className="companion-qr-wrapper">
           <QrCodeSvg
-            value={mapsQueryUrl}
+            value={shareTripUrl}
             ariaLabel={`QR Code para roteiro em ${itinerary.city}`}
             dataTestId="itinerary-companion-qr-svg"
             className="companion-qr-svg"
@@ -166,18 +239,28 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           <span className="companion-tag">Navegação Móvel Instantânea</span>
           <h3 className="companion-title">Leve seu guia de viagem no bolso</h3>
           <p className="companion-desc">
-            Aponte a câmera do seu smartphone para o QR Code para abrir as localizações do roteiro de {itinerary.city} diretamente no Google Maps.
+            Aponte a câmera do seu smartphone para o QR Code para abrir este roteiro compartilhado e adaptado ao clima diretamente no seu celular.
           </p>
-          <a
-            href={mapsQueryUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="companion-link no-print"
-            data-testid="itinerary-companion-maps-link"
-          >
-            <span>Abrir Destino no Google Maps</span>
-            <ExternalLink size={13} className="btn-icon-end" />
-          </a>
+          <div className="companion-links-row no-print">
+            <a
+              href={shareTripUrl}
+              className="companion-link companion-link-share"
+              data-testid="itinerary-companion-share-link"
+            >
+              <span>Abrir Roteiro Compartilhado</span>
+              <ExternalLink size={13} className="btn-icon-end" />
+            </a>
+            <a
+              href={mapsQueryUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="companion-link companion-link-maps"
+              data-testid="itinerary-companion-maps-link"
+            >
+              <span>Ver no Google Maps</span>
+              <ExternalLink size={13} className="btn-icon-end" />
+            </a>
+          </div>
         </div>
       </section>
 

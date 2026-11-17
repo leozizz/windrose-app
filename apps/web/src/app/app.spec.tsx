@@ -115,4 +115,67 @@ describe('App Component - Acessibilidade e Skip Link', () => {
       expect(alertBadges[0].textContent).toContain('Salto repentino para chuva forte');
     });
   });
+
+  describe('Compartilhamento e Hidratação de Roteiro via Hash da URL (Issue #52)', () => {
+    it('deve hidratar a sessão, ativar a aba de roteiro e exibir banner editorial quando hash válido estiver presente', async () => {
+      // Simula hash da URL com viagem para Ubatuba
+      const validHash =
+        '#trip=eyJ2IjoxLCJjIjoiVWJhdHViYSIsImEiOiJTVVJGSU5HIiwicCI6W3siaWQiOiJwb2ktMSIsIm5hbWUiOiJQcmFpYSBkbyBGw6lsaXgiLCJjYXRlZ29yeSI6IkJFQUNIIiwibGF0IjotMjMuMzg4LCJsb24iOi00NC45NzV9XX0';
+      window.location.hash = validHash;
+
+      const mockRankingUbatuba: ActivityRankingResult = {
+        locationName: 'Ubatuba',
+        latitude: -23.388,
+        longitude: -44.975,
+        activity: ActivityType.SURFING,
+        overallScore: 82,
+        recommendationLevel: 'EXCELLENT',
+        dailyScores: [
+          {
+            date: '2026-11-20',
+            score: 85,
+            recommendationLevel: 'EXCELLENT',
+            reasons: ['Ondas consistentes'],
+          },
+        ],
+      };
+
+      vi.spyOn(apiClient, 'getRanking').mockResolvedValue(mockRankingUbatuba);
+      vi.spyOn(apiClient, 'getPlacesDeck').mockResolvedValue({
+        city: 'Ubatuba',
+        coordinates: { lat: -23.388, lon: -44.975 },
+        total: 1,
+        deck: [],
+      });
+
+      render(<App />);
+
+      // Verifica exibição do banner editorial
+      const banner = await screen.findByTestId('shared-trip-banner');
+      expect(banner).toBeDefined();
+      expect(banner.textContent).toContain('Ubatuba');
+
+      // Botão de fechar banner
+      const dismissBtn = screen.getByTestId('shared-trip-banner-dismiss');
+      fireEvent.click(dismissBtn);
+      expect(screen.queryByTestId('shared-trip-banner')).toBeNull();
+
+      // Limpa hash
+      window.location.hash = '';
+    });
+
+    it('deve limpar hash corrompido via replaceState e não quebrar a aplicação', () => {
+      window.location.hash = '#trip=invalido_corrompido!!!';
+      const replaceStateSpy = vi.spyOn(window.history, 'replaceState');
+
+      render(<App />);
+
+      expect(replaceStateSpy).toHaveBeenCalled();
+      expect(screen.queryByTestId('shared-trip-banner')).toBeNull();
+      // Aplicação renderizada normalmente
+      expect(screen.getByTestId('skip-link')).toBeDefined();
+
+      window.location.hash = '';
+    });
+  });
 });

@@ -73,4 +73,29 @@ describe('useTripSession hook', () => {
     expect(result.current.canUndo).toBe(false);
     expect(result.current.isSwiped('poi-1')).toBe(false);
   });
+
+  it('deve hidratar múltiplos locais curtidos via hydrateLikedPlaces e persistir no localStorage', () => {
+    const { result } = renderHook(() => useTripSession('Florianópolis'));
+
+    const poi2: PointOfInterest = {
+      ...mockPoi,
+      id: 'poi-2',
+      name: 'Praia Mole',
+    };
+
+    act(() => {
+      result.current.hydrateLikedPlaces([mockPoi, poi2]);
+    });
+
+    expect(result.current.totalLikes).toBe(2);
+    expect(result.current.likedPois).toHaveLength(2);
+    expect(result.current.likedPois.map((p) => p.name)).toEqual(['Praia da Joaquina', 'Praia Mole']);
+    expect(result.current.isSwiped('poi-1')).toBe(true);
+    expect(result.current.isSwiped('poi-2')).toBe(true);
+
+    const storedRaw = localStorage.getItem('windrose_trip_v2_florianópolis');
+    expect(storedRaw).not.toBeNull();
+    const stored = JSON.parse(storedRaw as string);
+    expect(Object.keys(stored.swipes)).toHaveLength(2);
+  });
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ItineraryView } from './ItineraryView';
 import { TripItinerary, PoiCategory, PoiEnvironment, WeatherAlert } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
@@ -69,6 +69,74 @@ describe('ItineraryView Component', () => {
     expect(externalImages.length).toBe(0);
 
     expect(screen.getByTestId('itinerary-companion-maps-link')).toBeDefined();
+  });
+
+  describe('Compartilhamento de roteiro via link estático (Issue #52)', () => {
+    it('deve renderizar o botão de compartilhar roteiro com data-testid="itinerary-share-btn"', () => {
+      render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+      const shareBtn = screen.getByTestId('itinerary-share-btn');
+      expect(shareBtn).toBeDefined();
+      expect(shareBtn.textContent).toContain('Compartilhar Roteiro');
+    });
+
+    it('deve copiar link de compartilhamento para a área de transferência e alternar estado para "Link Copiado!"', async () => {
+      const writeTextMock = vi.fn().mockResolvedValue(undefined);
+      Object.assign(navigator, {
+        clipboard: {
+          writeText: writeTextMock,
+        },
+      });
+
+      render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+      const shareBtn = screen.getByTestId('itinerary-share-btn');
+      await act(async () => {
+        fireEvent.click(shareBtn);
+      });
+
+      expect(writeTextMock).toHaveBeenCalledTimes(1);
+      const copiedText = writeTextMock.mock.calls[0][0];
+      expect(copiedText).toContain('#trip=');
+
+      const copiedBtn = screen.getByTestId('itinerary-share-btn-copied');
+      expect(copiedBtn).toBeDefined();
+      expect(copiedBtn.textContent).toContain('Link Copiado!');
+    });
+
+    it('deve executar fallback funcional com document.execCommand quando navigator.clipboard for inacessível', async () => {
+      // Força navigator.clipboard como inacessível
+      const originalClipboard = navigator.clipboard;
+      // @ts-expect-error simulação de browser sem suporte
+      delete navigator.clipboard;
+
+      const execMock = vi.fn().mockReturnValue(true);
+      document.execCommand = execMock;
+
+      render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+      const shareBtn = screen.getByTestId('itinerary-share-btn');
+      await act(async () => {
+        fireEvent.click(shareBtn);
+      });
+
+      expect(execMock).toHaveBeenCalledWith('copy');
+      const copiedBtn = screen.getByTestId('itinerary-share-btn-copied');
+      expect(copiedBtn).toBeDefined();
+
+      // Restaura clipboard
+      Object.assign(navigator, { clipboard: originalClipboard });
+    });
+
+    it('deve atualizar o QR Code companion para codificar o link de compartilhamento da viagem', () => {
+      render(<ItineraryView itinerary={mockItinerary} onBackToSwipe={vi.fn()} />);
+
+      const qrSvg = screen.getByTestId('itinerary-companion-qr-svg');
+      expect(qrSvg).toBeDefined();
+      // O link no companion também deve apontar para o roteiro compartilhado
+      const shareLink = screen.getByTestId('itinerary-companion-share-link');
+      expect(shareLink.getAttribute('href')).toContain('#trip=');
+    });
   });
 
   it('deve garantir que o QR Code SVG vetorial contém caminhos de desenho sem dependência de rede', () => {

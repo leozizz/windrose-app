@@ -4,6 +4,8 @@ import {
   ActivityRankingResult,
   DailyScore,
   PointOfInterest,
+  PoiCategory,
+  PoiEnvironment,
 } from '@windrose/shared-types';
 import {
   Compass,
@@ -20,6 +22,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../services/api.client';
 import { useTripSession } from '../hooks/useTripSession';
+import { deserializeTripFromHash } from '../services/trip-serializer.service';
 import { SwipeDeck } from '../components/SwipeDeck';
 import { MatchesList } from '../components/MatchesList';
 import { ItineraryView } from '../components/ItineraryView';
@@ -39,6 +42,9 @@ export const App: React.FC = () => {
   );
   const [activeTab, setActiveTab] = useState<ActiveTab>('swipe');
   const [a11yFeedbackMessage, setA11yFeedbackMessage] = useState<string>('');
+  const [sharedTripBanner, setSharedTripBanner] = useState<{ city: string; count: number } | null>(
+    null
+  );
 
   // Weather state
   const [ranking, setRanking] = useState<ActivityRankingResult | null>(null);
@@ -131,6 +137,77 @@ export const App: React.FC = () => {
     }
   }, [fetchData, activeCity, selectedActivity]);
 
+  // Hidratação automática de viagem compartilhada via hash da URL (#trip=...)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const rawHash = window.location.hash;
+    if (!rawHash || (!rawHash.includes('#trip=') && !rawHash.includes('trip='))) {
+      return;
+    }
+
+    const payload = deserializeTripFromHash(rawHash);
+    if (payload) {
+      const restoredPois: PointOfInterest[] = payload.p.map((item) => ({
+        id: item.id,
+        name: item.name,
+        category: (item.category as PoiCategory) || PoiCategory.ATTRACTION,
+        environment: PoiEnvironment.OUTDOOR,
+        latitude: item.lat,
+        longitude: item.lon,
+        city: payload.c,
+        description: item.address ? `Localizado em ${item.address}` : `Atração em ${payload.c}`,
+        imageUrl: item.imageUrl || '',
+        tags: [item.category],
+        address: item.address,
+      }));
+
+      // Persiste imediatamente no localStorage para garantir leitura na montagem do hook
+      try {
+        const storageKey = `windrose_trip_v2_${payload.c.trim().toLowerCase()}`;
+        const swipes: Record<string, { poi: PointOfInterest; action: 'liked'; timestamp: number }> = {};
+        const history: string[] = [];
+        const now = Date.now();
+        for (const poi of restoredPois) {
+          swipes[poi.id] = { poi, action: 'liked', timestamp: now };
+          history.push(poi.id);
+        }
+        localStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            city: payload.c,
+            swipes,
+            history,
+          })
+        );
+      } catch {
+        // Ignora erros de escrita no storage
+      }
+
+      const targetActivity = payload.a || ActivityType.OUTDOOR_SIGHTSEEING;
+      setActiveCity(payload.c);
+      setCityNameInput(payload.c);
+      setSelectedActivity(targetActivity);
+      setActiveTab('itinerary');
+      setSharedTripBanner({
+        city: payload.c,
+        count: restoredPois.length,
+      });
+      setA11yFeedbackMessage(
+        `Roteiro compartilhado de ${payload.c} carregado com sucesso com ${restoredPois.length} atrações.`
+      );
+      fetchData(payload.c, targetActivity);
+    } else {
+      // Hash corrompido ou malicioso: limpa URL silenciosamente sem quebrar
+      try {
+        const cleanUrl = `${window.location.pathname}${window.location.search}`;
+        window.history.replaceState(null, '', cleanUrl);
+      } catch {
+        // Ignora erro em ambientes restritos
+      }
+    }
+  }, [fetchData]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (cityNameInput.trim()) {
@@ -221,6 +298,32 @@ export const App: React.FC = () => {
       <PwaInstallPrompt />
 
       <main id="main-content" tabIndex={-1} className="container">
+        {/* Editorial Shared Trip Welcome Banner */}
+        {sharedTripBanner && (
+          <aside
+            className="shared-trip-banner"
+            data-testid="shared-trip-banner"
+            role="status"
+            aria-label={`Roteiro compartilhado de ${sharedTripBanner.city}`}
+          >
+            <div className="shared-trip-banner-content">
+              <Sparkles size={18} className="shared-banner-icon" aria-hidden="true" />
+              <span>
+                Roteiro compartilhado de <strong>{sharedTripBanner.city}</strong> carregado com sucesso (
+                {sharedTripBanner.count} {sharedTripBanner.count === 1 ? 'local' : 'locais'}).
+              </span>
+            </div>
+            <button
+              type="button"
+              className="shared-trip-banner-dismiss"
+              onClick={() => setSharedTripBanner(null)}
+              data-testid="shared-trip-banner-dismiss"
+              aria-label="Dispensar aviso de roteiro compartilhado"
+            >
+              ✕
+            </button>
+          </aside>
+        )}
         {/* Empty State / Welcome Screen when no city is searched yet */}
         {!activeCity && !loadingWeather && (
           <section className="welcome-hero-card">
@@ -437,6 +540,8 @@ export const App: React.FC = () => {
                   <ItineraryView
                     itinerary={generatedItinerary}
                     onBackToSwipe={() => handleTabChange('swipe')}
+                    activity={selectedActivity}
+                    likedPlaces={likedPlacesList}
                   />
                 ) : (
                   <div className="empty-deck-card">
