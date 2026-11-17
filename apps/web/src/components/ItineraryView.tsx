@@ -18,6 +18,7 @@ import { TripItinerary, PoiSlot } from '@windrose/shared-types';
 import { CalendarExporter } from '../services/calendar.exporter';
 import { InteractiveMap } from './InteractiveMap';
 import { QrCodeSvg } from './QrCodeSvg';
+import { WeatherAlertBanner } from './WeatherAlertBanner';
 import { formatCategory, formatRecommendation } from '../utils/labels';
 
 interface ItineraryViewProps {
@@ -145,6 +146,11 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* Weather Abrupt Change Alert Banner */}
+      {itinerary.alerts && itinerary.alerts.length > 0 && (
+        <WeatherAlertBanner alerts={itinerary.alerts} className="itinerary-weather-alert-banner" />
+      )}
 
       {/* QR Code Companion Card (Both Screen & Print Friendly) */}
       <section className="itinerary-companion-card">

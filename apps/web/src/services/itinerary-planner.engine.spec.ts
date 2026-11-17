@@ -7,6 +7,7 @@ import {
   PoiEnvironment,
   BeachProfileType,
   CrowdLevel,
+  WeatherAlert,
 } from '@windrose/shared-types';
 
 describe('ItineraryPlannerEngine', () => {
@@ -226,6 +227,68 @@ describe('ItineraryPlannerEngine', () => {
       expect(eveningSlot.transitFromPrevious).toBeDefined();
       expect(eveningSlot.transitFromPrevious?.distanceKm).toBeLessThan(5);
       expect(eveningSlot.transitFromPrevious?.formattedSummary).toBeDefined();
+    });
+  });
+
+  describe('Alertas de virada climática (alerts)', () => {
+    const mockAlert: WeatherAlert = {
+      id: 'alert-temp-drop-2026-10-24',
+      type: 'TEMPERATURE_DROP',
+      severity: 'WARNING',
+      title: 'Queda brusca de temperatura',
+      description: 'Queda de 9°C prevista entre 2026-10-23 e 2026-10-24',
+      date: '2026-10-24',
+      previousDate: '2026-10-23',
+      metricDelta: {
+        from: 28,
+        to: 19,
+        unit: '°C',
+      },
+      recommendation: 'Leve agasalho e prefira atrações em locais fechados.',
+    };
+
+    it('deve propagar alerts passados explicitamente para TripItinerary.alerts', () => {
+      const itinerary = ItineraryPlannerEngine.buildSmartItinerary(
+        'Florianópolis',
+        mockLikedPois,
+        mockDailyScores,
+        [mockAlert]
+      );
+
+      expect(itinerary.alerts).toBeDefined();
+      expect(itinerary.alerts).toHaveLength(1);
+      expect(itinerary.alerts?.[0].id).toBe('alert-temp-drop-2026-10-24');
+      expect(itinerary.alerts?.[0].type).toBe('TEMPERATURE_DROP');
+    });
+
+    it('deve extrair e consolidar alertas presentes em dailyScores quando não informados explicitamente', () => {
+      const dailyScoresWithAlerts: DailyScore[] = [
+        mockDailyScores[0],
+        {
+          ...mockDailyScores[1],
+          alerts: [mockAlert],
+        },
+      ];
+
+      const itinerary = ItineraryPlannerEngine.buildSmartItinerary(
+        'Florianópolis',
+        mockLikedPois,
+        dailyScoresWithAlerts
+      );
+
+      expect(itinerary.alerts).toBeDefined();
+      expect(itinerary.alerts).toHaveLength(1);
+      expect(itinerary.alerts?.[0].title).toBe('Queda brusca de temperatura');
+    });
+
+    it('não deve definir alerts no roteiro se nenhum alerta existir', () => {
+      const itinerary = ItineraryPlannerEngine.buildSmartItinerary(
+        'Florianópolis',
+        mockLikedPois,
+        mockDailyScores
+      );
+
+      expect(itinerary.alerts).toBeUndefined();
     });
   });
 });
