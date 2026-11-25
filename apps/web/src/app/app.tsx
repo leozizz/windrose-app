@@ -29,6 +29,7 @@ import { ItineraryView } from '../components/ItineraryView';
 import { WeatherAlertBanner } from '../components/WeatherAlertBanner';
 import { PwaInstallPrompt } from '../components/PwaInstallPrompt';
 import { A11yAnnouncer } from '../components/A11yAnnouncer';
+import { SupportButton } from '../components/SupportButton';
 import { ItineraryPlannerEngine } from '../services/itinerary-planner.engine';
 import { formatActivity, formatRecommendation } from '../utils/labels';
 
@@ -672,6 +673,8 @@ export const App: React.FC = () => {
           </button>
         </nav>
       )}
+      {/* Botão Discreto de Apoio Voluntário via Pix */}
+      <SupportButton hasActiveCity={Boolean(activeCity)} />
     </div>
   );
 };

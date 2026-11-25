@@ -180,6 +180,7 @@ describe('App Component - Acessibilidade e Skip Link', () => {
       expect(screen.queryByTestId('shared-trip-banner')).toBeNull();
       // Aplicação renderizada normalmente
       expect(screen.getByTestId('skip-link')).toBeDefined();
+      expect(screen.getByTestId('support-floating-button')).toBeDefined();
 
       window.location.hash = '';
     });
